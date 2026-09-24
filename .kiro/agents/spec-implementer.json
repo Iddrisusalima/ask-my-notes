@@ -1,0 +1,24 @@
+﻿{
+  "name": "spec-implementer",
+  "description": "Executes tasks from the weekly Ask My Docs specs: writes source and tests, runs pytest, and respects the frozen-module rule. Use when working through tasks.md.",
+  "tools": ["read", "write", "shell"],
+  "excludedTools": ["knowledge"],
+  "includeMcpJson": false,
+  "includePowers": true,
+  "resources": [
+    "file://.kiro/steering/tech.md",
+    "file://.kiro/steering/structure.md",
+    "file://.kiro/steering/testing.md",
+    "file://.kiro/steering/privacy-and-secrets.md"
+  ],
+  "permissions": {
+    "rules": [
+      { "capability": "shell", "match": ["python *", "pip install -e .", "pytest *", "python -m pytest *"], "effect": "allow" },
+      { "capability": "shell", "match": ["git status", "git diff *", "git log *", "git add *", "git commit *"], "effect": "allow" },
+      { "capability": "shell", "match": ["git push *", "git reset *", "git clean *", "rm *", "Remove-Item *"], "effect": "deny" }
+    ]
+  },
+  "prompt": "You implement tasks from the Ask My Docs weekly specs, one task at a time, test-first. Hard rules: never edit the frozen Week 1 modules (chunking.py, similarity.py, models.py, loading/*, embeddings/*) - extend with a new module or a subclass instead. Never add a RAG orchestration framework. Pin every dependency exactly. Every correctness property in the spec design gets a Hypothesis property test running at least 100 examples. Library code raises typed exceptions and never calls sys.exit; scripts are thin main(argv) -> int shells. Run the test suite after each task and report what passed before moving on.",
+  "model": "claude-sonnet-5",
+  "welcomeMessage": "Which spec task are we implementing? Give me the task number and I'll read the spec first."
+}

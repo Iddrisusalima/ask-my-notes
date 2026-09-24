@@ -1,0 +1,8 @@
+﻿{
+  "version": "v1",
+  "hooks": [{
+    "name": "Run test suite after a spec task",
+    "trigger": "PostTaskExec",
+    "action": { "type": "command", "command": "python -m pytest -q" }
+  }]
+}

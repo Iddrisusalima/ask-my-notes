@@ -1,0 +1,8 @@
+﻿{
+  "version": "v1",
+  "hooks": [{
+    "name": "Report project readiness at session start",
+    "trigger": "SessionStart",
+    "action": { "type": "command", "command": "python --version; if (Test-Path .env) { 'env file: present' } else { 'env file: absent' }; if (Test-Path src/askmydocs) { 'package: scaffolded' } else { 'package: not scaffolded yet' }; if (Test-Path .chroma) { 'chroma persist dir: present' } else { 'chroma persist dir: absent' }; 'note files: ' + (Get-ChildItem sample-notes -Recurse -Include *.pdf,*.md,*.markdown -ErrorAction SilentlyContinue | Measure-Object).Count" }
+  }]
+}

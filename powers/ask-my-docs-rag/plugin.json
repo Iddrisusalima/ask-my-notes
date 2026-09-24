@@ -1,0 +1,10 @@
+﻿{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ask-my-docs-rag",
+  "version": "1.0.0",
+  "description": "Build and debug a hand-written RAG pipeline over your own notes: diagnose retrieval quality from the retrieval log, prove answers are grounded in retrieved context rather than model recall, and explain the chunk-embed-store-retrieve-generate pipeline end to end.",
+  "author": {
+    "name": "Ask My Docs"
+  },
+  "keywords": ["rag", "retrieval", "embeddings", "chunking", "vector-database", "chroma", "citations", "grounding", "top-k", "semantic-search"]
+}

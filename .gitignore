@@ -1,0 +1,32 @@
+﻿# Secrets
+.env
+.env.local
+*.key
+
+# Personal notes: keep the folder and its README, exclude the note files
+sample-notes/*
+!sample-notes/README.md
+
+# Vector store and ingest state
+.chroma/
+
+# Logs hold verbatim note text
+logs/
+
+# Generated evaluation artifacts
+reports/relevance-review*.csv
+reports/week3-evaluation-run.json
+reports/week3-evaluation-ratings.csv
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Test caches
+.hypothesis/
+.pytest_cache/

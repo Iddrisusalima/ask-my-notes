@@ -1,0 +1,9 @@
+﻿{
+  "version": "v1",
+  "hooks": [{
+    "name": "Run tests when a source module is saved",
+    "trigger": "PostFileSave",
+    "matcher": "src[\\\\/]askmydocs[\\\\/].*\\.py$",
+    "action": { "type": "command", "command": "python -m pytest -q -x" }
+  }]
+}

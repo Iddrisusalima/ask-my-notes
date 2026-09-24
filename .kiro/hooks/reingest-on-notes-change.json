@@ -1,0 +1,9 @@
+﻿{
+  "version": "v1",
+  "hooks": [{
+    "name": "Re-ingest when a note file is added",
+    "trigger": "PostFileCreate",
+    "matcher": "sample-notes[\\\\/].*\\.(pdf|md|markdown)$",
+    "action": { "type": "agent", "prompt": "A note file was added to sample-notes, so the Chroma collection is now stale for that file. Tell the user to run python scripts/05_ingest.py, which chunks, embeds, and upserts the new file incrementally and skips unchanged files. Do not run it automatically, since it may issue paid embedding calls." }
+  }]
+}

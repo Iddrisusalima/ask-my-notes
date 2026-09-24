@@ -1,0 +1,9 @@
+﻿{
+  "version": "v1",
+  "hooks": [{
+    "name": "Protect the frozen Week 1 modules",
+    "trigger": "PreToolUse",
+    "matcher": "fs_write|str_replace|fs_append",
+    "action": { "type": "agent", "prompt": "If this write targets src/askmydocs/chunking.py, similarity.py, models.py, loading/base.py, loading/pdf_loader.py, loading/markdown_loader.py, or anything under embeddings/, stop. Those modules stay byte-identical from the end of Week 1 onward, and an automated content check fails if they change. Extend behaviour with a new module or a subclass instead, and tell the user why. Writes to any other path proceed normally." }
+  }]
+}
