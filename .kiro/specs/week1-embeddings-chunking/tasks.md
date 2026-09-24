@@ -93,10 +93,10 @@ on the epic and summarised in the day-mapping section at the end.
       `end_offset - start_offset`, immutability of `StoredRecord.embedding`
     - _Requirements: 8.10, 8.11, 10.2, 10.4_
 
-- [ ] 3. Configuration, Reporter, and API key redaction
+- [x] 3. Configuration, Reporter, and API key redaction
   - Serves Mon: nothing can select a provider or chunk size until configuration parses.
 
-  - [~] 3.1 Implement `Configuration` and `load_configuration` in `src/askmydocs/config.py`
+  - [x] 3.1 Implement `Configuration` and `load_configuration` in `src/askmydocs/config.py`
     - Frozen `Configuration` dataclass with all eleven settings plus the `stride` property
     - `load_configuration(env: Mapping[str, str] | None = None)` reading from the injected
       mapping, defaulting to `os.environ` merged over `.env` values
@@ -109,13 +109,13 @@ on the epic and summarised in the day-mapping section at the end.
       expected type; the overlap message names both variables and both values
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.8, 1.9, 1.10, 1.11, 1.12_
 
-  - [~] 3.2 Implement `REDACTION_MARKER` and `redact()` in `src/askmydocs/config.py`
+  - [x] 3.2 Implement `REDACTION_MARKER` and `redact()` in `src/askmydocs/config.py`
     - Replace the whole API key and every contiguous substring of the key of at least 8
       characters with the marker; return the text unchanged when the key is `None` or shorter
       than 8 characters
     - _Requirements: 1.7_
 
-  - [~] 3.3 Implement `Reporter` in `src/askmydocs/reporting.py`
+  - [x] 3.3 Implement `Reporter` in `src/askmydocs/reporting.py`
     - `info`, `warning`, `error`, `progress(done, total)` writing to injected streams
     - Every outgoing string passes through `redact()` before reaching a stream, so redaction
       has exactly one choke point
@@ -163,10 +163,10 @@ on the epic and summarised in the day-mapping section at the end.
 - [~] 4. Checkpoint — configuration layer green
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Cosine similarity and shared test strategies
+- [x] 5. Cosine similarity and shared test strategies
   - Serves Mon–Tue: the numeric core behind the sentence comparison and the store's ranking.
 
-  - [~] 5.1 Implement `src/askmydocs/similarity.py`
+  - [x] 5.1 Implement `src/askmydocs/similarity.py`
     - `ZERO_NORM_THRESHOLD = 1e-12`, `euclidean_norm` over float64 via numpy
     - `cosine_similarity` with the fixed validation order: length mismatch → empty vector →
       non-finite element → degenerate norm, each raising the matching typed error and naming
@@ -174,7 +174,7 @@ on the epic and summarised in the day-mapping section at the end.
     - Return the dot product over the product of norms, clamped into `[-1.0, 1.0]`
     - _Requirements: 4.1, 4.2, 4.6, 4.7, 4.8, 4.9_
 
-  - [~] 5.2 Implement `tests/strategies.py`
+  - [x] 5.2 Implement `tests/strategies.py`
     - `finite_element`, `vector` (degenerate draws repaired, never filtered), `vector_pair`,
       `scale_factor` (log-uniform over 1e-6 to 1e6), `chunk_config`, `document_text`,
       `unicode_text` over the mixed alphabet, `multi_chunk_case`, `add_batches` (zero-sized
@@ -215,10 +215,10 @@ on the epic and summarised in the day-mapping section at the end.
     - Strategy `vector()` × `scale_factor`; assert `abs(sim(a, k·a) - 1.0) <= 1e-9`
     - **Validates: Requirements 4.5**
 
-- [ ] 6. Fixed-size chunker with overlap
+- [x] 6. Fixed-size chunker with overlap
   - Serves Wed–Thu: the boundary arithmetic, written and proved by test rather than delegated.
 
-  - [~] 6.1 Implement `src/askmydocs/chunking.py`
+  - [x] 6.1 Implement `src/askmydocs/chunking.py`
     - Frozen `Chunker(chunk_size, chunk_overlap)` whose `__post_init__` rejects
       `chunk_size < 1` and overlap outside `[0, chunk_size - 1]` with `ChunkerConfigError`
     - `stride`, `expected_chunk_count(text_length)` closed form, `chunk_text(text, source_path)`

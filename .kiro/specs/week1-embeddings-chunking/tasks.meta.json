@@ -95,6 +95,11 @@
         "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
         "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
         "timestamp": 1790271487640
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790283246358
       }
     ],
     "3.2 Implement `REDACTION_MARKER` and `redact()` in `src/askmydocs/config.py`": [
@@ -102,6 +107,11 @@
         "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
         "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
         "timestamp": 1790271487903
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790283265170
       }
     ],
     "3.3 Implement `Reporter` in `src/askmydocs/reporting.py`": [
@@ -109,6 +119,11 @@
         "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
         "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
         "timestamp": 1790271488208
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790283277078
       }
     ],
     "4. Checkpoint — configuration layer green": [
@@ -123,6 +138,11 @@
         "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
         "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
         "timestamp": 1790271488860
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790282363075
       }
     ],
     "5.2 Implement `tests/strategies.py`": [
@@ -130,6 +150,11 @@
         "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
         "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
         "timestamp": 1790271489072
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790282374422
       }
     ],
     "6.1 Implement `src/askmydocs/chunking.py`": [
@@ -137,6 +162,11 @@
         "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
         "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
         "timestamp": 1790271489315
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790282390329
       }
     ],
     "7.1 Implement `src/askmydocs/loading/discovery.py`": [
@@ -312,6 +342,27 @@
         "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
         "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
         "timestamp": 1790279522963
+      }
+    ],
+    "5. Cosine similarity and shared test strategies": [
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790282374887
+      }
+    ],
+    "6. Fixed-size chunker with overlap": [
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790282390674
+      }
+    ],
+    "3. Configuration, Reporter, and API key redaction": [
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790283277333
       }
     ]
   }
