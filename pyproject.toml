@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools==80.10.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "askmydocs"
+version = "0.1.0"
+description = "Ask My Docs: a from-scratch Retrieval-Augmented Generation tool over personal PDF and markdown notes."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+
+# Requirement 13.1: every direct dependency pins an exact version.
+# Requirement 13.2: no dependency here supplies pre-built document loading, chunking,
+# retrieval, re-ranking, or prompt-orchestration pipelines. Every RAG stage is hand-written.
+# Deliberately absent: langchain, llama-index, haystack-ai, and every hosted vector
+# database client.
+dependencies = [
+    "numpy==2.1.3",                    # float64 vector arithmetic
+    "openai==1.109.1",                 # embeddings endpoint only
+    "pypdf==6.1.3",                    # PDF page text extraction
+    "python-dotenv==1.1.1",            # loads .env into the process environment
+    "sentence-transformers==5.1.0",    # default local embedding provider
+]
+
+[project.optional-dependencies]
+# Requirement 13.4: the test suite runs with one command, `python -m pytest -q`.
+dev = [
+    "hypothesis==6.140.3",
+    "pytest==8.4.2",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["askmydocs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --durations=15"

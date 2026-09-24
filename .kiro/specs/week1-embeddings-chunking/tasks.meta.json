@@ -1,0 +1,318 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Create `pyproject.toml`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271485628
+      },
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271524096
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790278540072
+      }
+    ],
+    "1.2 Create the package and directory skeleton": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271485992
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790278559055
+      }
+    ],
+    "1.3 Create `.gitignore` and `.env.example`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271486194
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790278578323
+      }
+    ],
+    "1.4 Create `sample-notes/README.md`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271486416
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790278595868
+      }
+    ],
+    "1.5 Create `tests/conftest.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271486727
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790278606450
+      }
+    ],
+    "2.1 Implement `src/askmydocs/errors.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271487094
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790279508709
+      }
+    ],
+    "2.2 Implement `src/askmydocs/models.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271487422
+      },
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790279522622
+      }
+    ],
+    "3.1 Implement `Configuration` and `load_configuration` in `src/askmydocs/config.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271487640
+      }
+    ],
+    "3.2 Implement `REDACTION_MARKER` and `redact()` in `src/askmydocs/config.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271487903
+      }
+    ],
+    "3.3 Implement `Reporter` in `src/askmydocs/reporting.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271488208
+      }
+    ],
+    "4. Checkpoint — configuration layer green": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271488475
+      }
+    ],
+    "5.1 Implement `src/askmydocs/similarity.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271488860
+      }
+    ],
+    "5.2 Implement `tests/strategies.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271489072
+      }
+    ],
+    "6.1 Implement `src/askmydocs/chunking.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271489315
+      }
+    ],
+    "7.1 Implement `src/askmydocs/loading/discovery.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271489525
+      }
+    ],
+    "8.1 Implement `src/askmydocs/loading/base.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271489739
+      }
+    ],
+    "8.2 Implement `src/askmydocs/loading/markdown_loader.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271490191
+      }
+    ],
+    "8.3 Implement `src/askmydocs/loading/pdf_loader.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271490507
+      }
+    ],
+    "8.4 Implement `src/askmydocs/loading/pipeline.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271490758
+      }
+    ],
+    "9. Checkpoint — pure layers and loading green": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271491023
+      }
+    ],
+    "10.1 Implement `src/askmydocs/stores/base.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271491252
+      }
+    ],
+    "10.2 Implement `src/askmydocs/stores/memory.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271491557
+      }
+    ],
+    "10.3 Implement `src/askmydocs/stores/factory.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271491804
+      }
+    ],
+    "11.1 Implement `src/askmydocs/embeddings/retry.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271492126
+      }
+    ],
+    "11.2 Implement `src/askmydocs/embeddings/base.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271492473
+      }
+    ],
+    "11.3 Implement `tests/fakes.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271492719
+      }
+    ],
+    "12.1 Implement `src/askmydocs/embeddings/local_provider.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271492970
+      }
+    ],
+    "12.3 Implement `src/askmydocs/embeddings/factory.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271493225
+      }
+    ],
+    "13.1 Implement `scripts/01_embed_one.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271493484
+      }
+    ],
+    "13.2 Implement `scripts/02_compare_sentences.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271493724
+      }
+    ],
+    "13.3 Implement `scripts/03_chunking_experiment.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271494000
+      }
+    ],
+    "13.4 Implement `scripts/04_pipeline.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271494257
+      }
+    ],
+    "14.1 Write `tests/test_layering.py`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271494518
+      }
+    ],
+    "15.1 Write `learning-notes/why-split-documents.md`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271494956
+      }
+    ],
+    "15.2 Write `learning-notes/semantic-search.md`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271495202
+      }
+    ],
+    "15.3 Write `README.md`": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271495490
+      }
+    ],
+    "16. Final checkpoint — full suite green within the time budget": [
+      {
+        "executionId": "c8c0e66e-a502-4a16-80ae-e916ffd1c6f5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790271495899
+      }
+    ],
+    "1. Repository scaffold, dependency manifest, and test harness": [
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790278606782
+      }
+    ],
+    "2. Exception hierarchy and data models": [
+      {
+        "executionId": "2554ca86-48c5-408d-9c1b-03c430b1c5a5",
+        "chatSessionId": "sess_b5799f69-3c6d-4335-b64c-c3619ed35374",
+        "timestamp": 1790279522963
+      }
+    ]
+  }
+}

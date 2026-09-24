@@ -20,10 +20,10 @@ on the epic and summarised in the day-mapping section at the end.
 
 ## Tasks
 
-- [ ] 1. Repository scaffold, dependency manifest, and test harness
+- [x] 1. Repository scaffold, dependency manifest, and test harness
   - Serves the Mon–Tue setup step. Nothing else can be imported or tested until this exists.
 
-  - [ ] 1.1 Create `pyproject.toml`
+  - [x] 1.1 Create `pyproject.toml`
     - Pin an exact version for every direct dependency: `openai`, `sentence-transformers`,
       `pypdf`, `numpy`, `python-dotenv`, `pytest`, `hypothesis`
     - Declare `requires-python = ">=3.10,<3.13"` and the `src/` layout package discovery
@@ -32,25 +32,25 @@ on the epic and summarised in the day-mapping section at the end.
     - Configure pytest: `testpaths = ["tests"]`, `--strict-markers`, `--durations=15`
     - _Requirements: 13.1, 13.2, 13.4, 13.8_
 
-  - [ ] 1.2 Create the package and directory skeleton
+  - [x] 1.2 Create the package and directory skeleton
     - `src/askmydocs/__init__.py`, `src/askmydocs/loading/__init__.py`,
       `src/askmydocs/embeddings/__init__.py`, `src/askmydocs/stores/__init__.py`
     - Empty `scripts/`, `reports/`, `learning-notes/`, `sample-notes/`, `tests/` directories
     - _Requirements: 13.1, 13.3_
 
-  - [ ] 1.3 Create `.gitignore` and `.env.example`
+  - [x] 1.3 Create `.gitignore` and `.env.example`
     - `.gitignore`: `.env`, `.hypothesis/`, `__pycache__/`, and `sample-notes/*` with a
       negation for `sample-notes/README.md`
     - `.env.example`: every `ASKMYDOCS_*` variable plus `OPENAI_API_KEY=sk-your-key-here`,
       placeholder values only, no real secret
     - _Requirements: 1.6, 6.2_
 
-  - [ ] 1.4 Create `sample-notes/README.md`
+  - [x] 1.4 Create `sample-notes/README.md`
     - State the expected count of 5 to 10 note files, the supported extensions `.pdf`, `.md`,
       `.markdown`, and that this README is not itself counted as a note file
     - _Requirements: 6.1, 6.2_
 
-  - [ ] 1.5 Create `tests/conftest.py`
+  - [x] 1.5 Create `tests/conftest.py`
     - Register the Hypothesis `pure` profile (200 examples, 500 ms deadline) and `filesystem`
       profile (100 examples, 3 s deadline, `too_slow` health check suppressed); load `pure`
       by default
@@ -67,9 +67,9 @@ on the epic and summarised in the day-mapping section at the end.
     - Assert `sample-notes/README.md` states the count range and the supported extensions
     - _Requirements: 1.6, 6.1, 6.2, 13.1, 13.2, 13.6_
 
-- [ ] 2. Exception hierarchy and data models
+- [x] 2. Exception hierarchy and data models
 
-  - [ ] 2.1 Implement `src/askmydocs/errors.py`
+  - [x] 2.1 Implement `src/askmydocs/errors.py`
     - `AskMyDocsError` root plus the full hierarchy from the design: `ConfigurationError`,
       `NotesFolderError`, `DocumentLoadError` (`EncryptedPdfError`, `FileTooLargeError`,
       `EmptyDocumentError`), `ChunkerConfigError`, `SimilarityError`
@@ -80,7 +80,7 @@ on the epic and summarised in the day-mapping section at the end.
     - No `sys.exit` anywhere in library code
     - _Requirements: 1.3, 4.6, 4.7, 4.8, 4.9, 6.5, 7.7, 7.11, 7.12, 10.7, 10.8, 10.13, 10.14, 11.9_
 
-  - [ ] 2.2 Implement `src/askmydocs/models.py`
+  - [x] 2.2 Implement `src/askmydocs/models.py`
     - Frozen dataclasses `Document(text, source_path, file_type)`,
       `Chunk(text, source_path, index, start_offset, end_offset)` with `length`, `chunk_id`
       (`"{source_path}#{index}"`), and `to_metadata()`,
@@ -96,7 +96,7 @@ on the epic and summarised in the day-mapping section at the end.
 - [ ] 3. Configuration, Reporter, and API key redaction
   - Serves Mon: nothing can select a provider or chunk size until configuration parses.
 
-  - [ ] 3.1 Implement `Configuration` and `load_configuration` in `src/askmydocs/config.py`
+  - [~] 3.1 Implement `Configuration` and `load_configuration` in `src/askmydocs/config.py`
     - Frozen `Configuration` dataclass with all eleven settings plus the `stride` property
     - `load_configuration(env: Mapping[str, str] | None = None)` reading from the injected
       mapping, defaulting to `os.environ` merged over `.env` values
@@ -109,13 +109,13 @@ on the epic and summarised in the day-mapping section at the end.
       expected type; the overlap message names both variables and both values
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.8, 1.9, 1.10, 1.11, 1.12_
 
-  - [ ] 3.2 Implement `REDACTION_MARKER` and `redact()` in `src/askmydocs/config.py`
+  - [~] 3.2 Implement `REDACTION_MARKER` and `redact()` in `src/askmydocs/config.py`
     - Replace the whole API key and every contiguous substring of the key of at least 8
       characters with the marker; return the text unchanged when the key is `None` or shorter
       than 8 characters
     - _Requirements: 1.7_
 
-  - [ ] 3.3 Implement `Reporter` in `src/askmydocs/reporting.py`
+  - [~] 3.3 Implement `Reporter` in `src/askmydocs/reporting.py`
     - `info`, `warning`, `error`, `progress(done, total)` writing to injected streams
     - Every outgoing string passes through `redact()` before reaching a stream, so redaction
       has exactly one choke point
@@ -160,13 +160,13 @@ on the epic and summarised in the day-mapping section at the end.
     - `progress` prints the cumulative and total counts
     - _Requirements: 1.7, 11.7_
 
-- [ ] 4. Checkpoint — configuration layer green
+- [~] 4. Checkpoint — configuration layer green
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 5. Cosine similarity and shared test strategies
   - Serves Mon–Tue: the numeric core behind the sentence comparison and the store's ranking.
 
-  - [ ] 5.1 Implement `src/askmydocs/similarity.py`
+  - [~] 5.1 Implement `src/askmydocs/similarity.py`
     - `ZERO_NORM_THRESHOLD = 1e-12`, `euclidean_norm` over float64 via numpy
     - `cosine_similarity` with the fixed validation order: length mismatch → empty vector →
       non-finite element → degenerate norm, each raising the matching typed error and naming
@@ -174,7 +174,7 @@ on the epic and summarised in the day-mapping section at the end.
     - Return the dot product over the product of norms, clamped into `[-1.0, 1.0]`
     - _Requirements: 4.1, 4.2, 4.6, 4.7, 4.8, 4.9_
 
-  - [ ] 5.2 Implement `tests/strategies.py`
+  - [~] 5.2 Implement `tests/strategies.py`
     - `finite_element`, `vector` (degenerate draws repaired, never filtered), `vector_pair`,
       `scale_factor` (log-uniform over 1e-6 to 1e6), `chunk_config`, `document_text`,
       `unicode_text` over the mixed alphabet, `multi_chunk_case`, `add_batches` (zero-sized
@@ -218,7 +218,7 @@ on the epic and summarised in the day-mapping section at the end.
 - [ ] 6. Fixed-size chunker with overlap
   - Serves Wed–Thu: the boundary arithmetic, written and proved by test rather than delegated.
 
-  - [ ] 6.1 Implement `src/askmydocs/chunking.py`
+  - [~] 6.1 Implement `src/askmydocs/chunking.py`
     - Frozen `Chunker(chunk_size, chunk_overlap)` whose `__post_init__` rejects
       `chunk_size < 1` and overlap outside `[0, chunk_size - 1]` with `ChunkerConfigError`
     - `stride`, `expected_chunk_count(text_length)` closed form, `chunk_text(text, source_path)`
@@ -308,7 +308,7 @@ on the epic and summarised in the day-mapping section at the end.
 - [ ] 7. Sample notes discovery
   - Serves Wed–Thu: deterministic, cross-platform file discovery.
 
-  - [ ] 7.1 Implement `src/askmydocs/loading/discovery.py`
+  - [~] 7.1 Implement `src/askmydocs/loading/discovery.py`
     - `SUPPORTED_EXTENSIONS`, frozen `DiscoveredFile`, `SkippedEntry`, `DiscoveryResult`
     - `discover_notes(notes_folder)`: recursive walk; case-insensitive extension match;
       exclude the folder README, dot-prefixed entries, and symbolic links, each recorded as a
@@ -340,7 +340,7 @@ on the epic and summarised in the day-mapping section at the end.
 - [ ] 8. PDF and markdown document loaders
   - Serves Wed–Thu: real notes reaching the chunker as plain text with source metadata.
 
-  - [ ] 8.1 Implement `src/askmydocs/loading/base.py`
+  - [~] 8.1 Implement `src/askmydocs/loading/base.py`
     - `MAX_FILE_BYTES = 25 * 1024 * 1024`, `DocumentLoader` protocol
     - `normalize_newlines(text)` converting CRLF and lone CR to a single LF and applying no
       other transformation
@@ -348,20 +348,20 @@ on the epic and summarised in the day-mapping section at the end.
       `errors="replace"`, returning the text and the replacement count
     - _Requirements: 7.4, 7.5, 7.10, 7.12_
 
-  - [ ] 8.2 Implement `src/askmydocs/loading/markdown_loader.py`
+  - [~] 8.2 Implement `src/askmydocs/loading/markdown_loader.py`
     - Return a `Document` with the file's full text, all markup, indentation, and blank lines
       preserved, decoded via `decode_utf8` and newline-normalized
     - Populate `source_path` as the forward-slash relative path and `file_type` as the
       lower-cased extension without the leading period
     - _Requirements: 7.2, 7.3, 7.4, 7.9, 7.10_
 
-  - [ ] 8.3 Implement `src/askmydocs/loading/pdf_loader.py`
+  - [~] 8.3 Implement `src/askmydocs/loading/pdf_loader.py`
     - Join per-page extracted text in ascending page order with exactly one LF between pages
       and nothing else inserted
     - Raise `EncryptedPdfError` when the reader reports encryption
     - _Requirements: 7.1, 7.3, 7.9, 7.11_
 
-  - [ ] 8.4 Implement `src/askmydocs/loading/pipeline.py`
+  - [~] 8.4 Implement `src/askmydocs/loading/pipeline.py`
     - `load_documents(discovery, notes_folder, reporter)` loading in discovery order with
       per-file isolation in the design's order: size check before opening, then encryption,
       then open/parse failure, then the whitespace-only check
@@ -397,20 +397,20 @@ on the epic and summarised in the day-mapping section at the end.
       order, one report per bad file names its path and reason, and no exception escapes
     - **Validates: Requirements 7.7, 7.8, 7.11, 7.12**
 
-- [ ] 9. Checkpoint — pure layers and loading green
+- [~] 9. Checkpoint — pure layers and loading green
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 10. Vector store interface and In_Memory_Store
   - Serves Fri wrap-up, and is the single seam Week 2 replaces with Chroma.
 
-  - [ ] 10.1 Implement `src/askmydocs/stores/base.py`
+  - [~] 10.1 Implement `src/askmydocs/stores/base.py`
     - Abstract `VectorStoreInterface` declaring exactly `add(chunks, embeddings)`, `count()`,
       `query(embedding, k)`, and a `dimensionality` property
     - Docstrings state the contract: empty batch is a no-op, add validation is atomic, query
       returns descending similarity with ties broken by ascending insertion index
     - _Requirements: 10.1, 10.2, 10.3_
 
-  - [ ] 10.2 Implement `src/askmydocs/stores/memory.py`
+  - [~] 10.2 Implement `src/askmydocs/stores/memory.py`
     - `InMemoryStore` holding `list[StoredRecord]` and a lazily fixed `_dimensionality`
     - `add` validates in order before mutating anything: count match, empty-batch early
       return, uniform incoming vector length, match against the established dimensionality;
@@ -421,7 +421,7 @@ on the epic and summarised in the day-mapping section at the end.
       empty store returns `[]` without raising even though no dimensionality is established
     - _Requirements: 10.2, 10.4, 10.5, 10.6, 10.7, 10.8, 10.9, 10.10, 10.11, 10.12, 10.13, 10.14, 10.15_
 
-  - [ ] 10.3 Implement `src/askmydocs/stores/factory.py`
+  - [~] 10.3 Implement `src/askmydocs/stores/factory.py`
     - `build_store(configuration)` returning `InMemoryStore`, with the single branch point
       Week 2 extends
     - _Requirements: 10.1, 10.2_
@@ -485,7 +485,7 @@ on the epic and summarised in the day-mapping section at the end.
 - [ ] 11. Embedder core: retry, batching, and the substitute embedder
   - Serves the Mon–Tue embedding goal; sequenced here because it depends on configuration.
 
-  - [ ] 11.1 Implement `src/askmydocs/embeddings/retry.py`
+  - [~] 11.1 Implement `src/askmydocs/embeddings/retry.py`
     - `FailureKind` enum, `classify_failure(error)` mapping rate-limit, timeout, and connection
       errors to transient and credential or rejected-input errors to terminal
     - `RetryPolicy(max_retry_attempts, sleep=time.sleep)` with
@@ -494,7 +494,7 @@ on the epic and summarised in the day-mapping section at the end.
       raising `EmbeddingFailedError` naming provider, attempts made, and reason on exhaustion
     - _Requirements: 2.7, 2.9, 2.10_
 
-  - [ ] 11.2 Implement `src/askmydocs/embeddings/base.py`
+  - [~] 11.2 Implement `src/askmydocs/embeddings/base.py`
     - `Embedder` protocol and `BaseEmbedder(ABC)` with `dimensionality` discovered from the
       first successful response then asserted constant, `batch_call_count`, and the abstract
       `_embed_batch`
@@ -508,7 +508,7 @@ on the epic and summarised in the day-mapping section at the end.
     - Imports no store type; returns `list[list[float]]` only
     - _Requirements: 2.1, 2.4, 2.6, 2.7, 2.8, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 10.3_
 
-  - [ ] 11.3 Implement `tests/fakes.py`
+  - [~] 11.3 Implement `tests/fakes.py`
     - `FakeEmbedder(BaseEmbedder)` seeded from SHA-256 of the text (not `hash()`), fixed
       dimensionality defaulting to 8 and parameterizable to 3, guaranteed non-zero norm,
       recording its segments
@@ -573,7 +573,7 @@ on the epic and summarised in the day-mapping section at the end.
 
 - [ ] 12. Embedding providers and factory
 
-  - [ ] 12.1 Implement `src/askmydocs/embeddings/local_provider.py`
+  - [~] 12.1 Implement `src/askmydocs/embeddings/local_provider.py`
     - `SentenceTransformersEmbedder` loading the model once, lazily, in `_embed_batch`
     - Never reads the API key variable and opens no socket to the OpenAI API
     - _Requirements: 1.4, 2.1, 2.4_
@@ -586,7 +586,7 @@ on the epic and summarised in the day-mapping section at the end.
       must then raise a clear `ConfigurationError` when the OpenAI provider is selected
     - _Requirements: 1.3, 2.1, 2.9, 2.10, 3.2_
 
-  - [ ] 12.3 Implement `src/askmydocs/embeddings/factory.py`
+  - [~] 12.3 Implement `src/askmydocs/embeddings/factory.py`
     - `build_embedder(configuration, retry_policy=None)` selecting the provider implementation
       from `configuration.provider`, defaulting to the local provider
     - _Requirements: 1.4, 1.5_
@@ -604,13 +604,13 @@ on the epic and summarised in the day-mapping section at the end.
     `Reporter`, calls library functions, catches typed exceptions, and maps them to the design's
     exit statuses. The optional `embedder` parameter is how tests inject the substitute.
 
-  - [ ] 13.1 Implement `scripts/01_embed_one.py`
+  - [~] 13.1 Implement `scripts/01_embed_one.py`
     - Embed one sentence; print the dimensionality and the first 5 elements, or all elements
       when the dimensionality is below 5
     - Mon–Tue deliverable
     - _Requirements: 2.2, 2.3_
 
-  - [ ] 13.2 Implement `scripts/02_compare_sentences.py`
+  - [~] 13.2 Implement `scripts/02_compare_sentences.py`
     - Define 3 similar and 3 unrelated sentences of 40–200 characters each, sharing no content
       word across groups
     - Embed all 6 in a single batch call; print 3 within-group lines, 9 cross-group lines, both
@@ -620,7 +620,7 @@ on the epic and summarised in the day-mapping section at the end.
     - Mon–Tue deliverable
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
-  - [ ] 13.3 Implement `scripts/03_chunking_experiment.py`
+  - [~] 13.3 Implement `scripts/03_chunking_experiment.py`
     - Chunk the loaded documents once for each of the 6 combinations of sizes 200, 500, 1000
       and overlaps 0, 50; issue no embedder call at all
     - Print per combination the size, overlap, total chunk count, mean length to 1 decimal
@@ -632,7 +632,7 @@ on the epic and summarised in the day-mapping section at the end.
     - Wed–Thu deliverable
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.6_
 
-  - [ ] 13.4 Implement `scripts/04_pipeline.py`
+  - [~] 13.4 Implement `scripts/04_pipeline.py`
     - Discover, load, chunk, then compare the total chunk count against `Max_Chunks_Per_Run`
       and terminate with exit 4 naming both numbers before any request when exceeded
     - Embed in batches of at most the configured batch size, printing cumulative and total
@@ -677,7 +677,7 @@ on the epic and summarised in the day-mapping section at the end.
 
 - [ ] 14. Layering enforcement
 
-  - [ ] 14.1 Write `tests/test_layering.py`
+  - [~] 14.1 Write `tests/test_layering.py`
     - AST-parse `src/askmydocs/chunking.py` and every module under `src/askmydocs/embeddings/`
       and assert no import statement names `askmydocs.stores` or any store symbol
     - Resolve the type hints of the public `Chunker` and `Embedder` members and assert no
@@ -687,14 +687,14 @@ on the epic and summarised in the day-mapping section at the end.
 - [ ] 15. Learning notes and README
   - Fri wrap-up: the written artifacts and the setup document that names them.
 
-  - [ ] 15.1 Write `learning-notes/why-split-documents.md`
+  - [~] 15.1 Write `learning-notes/why-split-documents.md`
     - A section under its own heading of at least 100 words on why documents are split,
       addressing both model context length limits and retrieval relevance precision
     - Record, for at least 2 of the 6 experiment combinations, the observation of how size and
       overlap changed which sentences landed in one chunk, using the output of script 03
     - _Requirements: 12.1, 9.5_
 
-  - [ ] 15.2 Write `learning-notes/semantic-search.md`
+  - [~] 15.2 Write `learning-notes/semantic-search.md`
     - A section under its own heading explaining semantic search in 3–4 sentences with no
       formulas, no mathematical operators, and no variable symbols
     - Record the selected provider, model name, dimensionality, and the reason for the choice;
@@ -702,7 +702,7 @@ on the epic and summarised in the day-mapping section at the end.
       together with the 6 sentences; and the chosen chunk size and overlap with the reason
     - _Requirements: 12.2, 12.3, 12.4, 12.5_
 
-  - [ ] 15.3 Write `README.md`
+  - [~] 15.3 Write `README.md`
     - Setup commands including `pip install -e .`, and why the `src/` layout requires it
     - Every environment variable with its default and permitted range, and the model default
       per provider
@@ -718,7 +718,7 @@ on the epic and summarised in the day-mapping section at the end.
     - The README states the test command and one command per script
     - _Requirements: 12.1, 12.2, 12.6, 13.3, 13.4_
 
-- [ ] 16. Final checkpoint — full suite green within the time budget
+- [~] 16. Final checkpoint — full suite green within the time budget
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Week 1 day mapping
