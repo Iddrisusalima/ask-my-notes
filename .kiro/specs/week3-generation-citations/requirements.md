@@ -1,8 +1,8 @@
-# Requirements Document
+﻿# Requirements Document
 
 ## Introduction
 
-Week 3 (Sep 28 – Oct 4) of the "Ask My Docs" learning project turns retrieval into answers. Week 1 delivered Configuration, the Embedder, chunking, loading, and the store interface. Week 2 delivered the persistent Chroma_Store, incremental ingest, and the Retriever, which returns a Retrieval_Result whose outcome is exactly one of RELEVANT_CONTEXT, NO_RELEVANT_CONTEXT, or EMPTY_COLLECTION, together with an ordered sequence of SearchHit values each carrying a Chunk (source path, ordinal index, start and end character offsets) and a Similarity_Score.
+Week 3 (Sep 28 â€“ Oct 4) of the "Ask My Docs" learning project turns retrieval into answers. Week 1 delivered Configuration, the Embedder, chunking, loading, and the store interface. Week 2 delivered the persistent Chroma_Store, incremental ingest, and the Retriever, which returns a Retrieval_Result whose outcome is exactly one of RELEVANT_CONTEXT, NO_RELEVANT_CONTEXT, or EMPTY_COLLECTION, together with an ordered sequence of SearchHit values each carrying a Chunk (source path, ordinal index, start and end character offsets) and a Similarity_Score.
 
 Week 3 consumes that Retrieval_Result and adds nothing to the storage or retrieval layer. It adds prompt construction with a bounded context budget, answer generation through the chat completions endpoint, citation markers that map to a printed source list, citation validation, an explicit refusal path, a single end-to-end command-line script, an append-only Answer_Log, an evaluation run over at least ten questions with hand-entered quality ratings, the README with a "What I Learned" section, a RAG versus fine-tuning comparison, a demo shot list, and the submission and self-check checklists. Week 1 and Week 2 modules are not modified.
 
@@ -58,7 +58,7 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 - **What_I_Learned_Section**: The Readme section in which the learner explains embeddings, chunking, and the retrieval-augmented generation pipeline in the learner's own words.
 - **Example_Screenshot**: The committed image file showing one example question, its presented answer, and its Source_List, referenced from the Readme.
 - **RAG_Versus_Fine_Tuning_Note**: The written markdown artifact comparing retrieval-augmented generation against fine-tuning. Default path `learning-notes/rag-vs-fine-tuning.md`.
-- **Demo_Script**: The written markdown shot list for the 3 to 4 minute demo video. Default path `learning-notes/demo-script.md`.
+- **Demo_Script**: The written markdown shot list for the demo video, whose running time is at least 30 seconds and at most 3 minutes, the upper bound being the point past which the Kiro University Challenge reviewer stops watching. Default path `learning-notes/demo-script.md`.
 - **Submission_Checklist**: The written markdown artifact listing every submission deliverable as a checkable item. Default path `learning-notes/submission-checklist.md`.
 - **Self_Check_Checklist**: The written markdown artifact listing the six self-check questions the learner must be able to answer. Default path `learning-notes/self-check.md`.
 
@@ -254,7 +254,7 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 #### Acceptance Criteria
 
 1. THE RAG_Versus_Fine_Tuning_Note SHALL compare retrieval-augmented generation against fine-tuning on at least data freshness, cost, traceability of answers, and the kind of task each suits, and SHALL state which approach this project uses and why.
-2. THE Demo_Script SHALL hold an ordered shot list for a demo of 3 to 4 minutes covering the ingest step and 2 to 3 live questions, with an explanation of each pipeline stage.
+2. THE Demo_Script SHALL hold an ordered shot list for a demo of at least 30 seconds and at most 3 minutes covering the ingest step and 2 to 3 live questions, with an explanation of each pipeline stage.
 3. THE Demo_Script SHALL name, for each shot, the command shown and the point the learner makes in that shot.
 4. THE Learning_Notes SHALL hold the RAG_Versus_Fine_Tuning_Note and the Demo_Script as committed markdown files.
 
@@ -264,7 +264,7 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 
 #### Acceptance Criteria
 
-1. THE Submission_Checklist SHALL hold one checkable item for each of: a public GitHub repository named `ask-my-docs`, the committed Sample_Notes_Folder, the recorded 3 to 4 minute demo video, and the repository link plus video link sent to the mentor before Sunday 4 October 2026 23:59.
+1. THE Submission_Checklist SHALL hold one checkable item for each of: a public GitHub repository named `ask-my-docs`, the committed Sample_Notes_Folder, the recorded demo video of at least 30 seconds and at most 3 minutes, and the repository link plus video link sent to the mentor before Sunday 4 October 2026 23:59.
 2. THE Self_Check_Checklist SHALL hold one checkable item for each of: explaining an embedding without using the word "vector", explaining why Chunk_Size affects the quality of retrieved context, explaining how a vector database finds similar Chunks, explaining the full pipeline in under one minute, showing answers that cite their source, and showing graceful handling of a question with no good answer in the notes.
 3. THE Submission_Checklist SHALL record the submission deadline as Sunday 4 October 2026 23:59.
 4. THE Submission_Checklist and the Self_Check_Checklist SHALL be committed markdown files in the Learning_Notes.
