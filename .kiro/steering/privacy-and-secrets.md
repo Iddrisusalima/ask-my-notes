@@ -2,7 +2,7 @@
 
 ## Never commit
 
-`.env`, personal note files under `sample-notes/` (only the folder README is tracked), `.chroma/`,
+`.env`, personal note files under `my-notes/`, `.chroma/`,
 `logs/`, `reports/relevance-review*.csv`, and the answer log. These hold API keys or verbatim
 personal note text.
 
@@ -12,10 +12,14 @@ The key is read from the environment only. It never appears in a log record, an 
 traceback, a prompt, or a report. All console output goes through the `Reporter`, which substitutes
 a fixed redaction marker, including for any substring of the key at least 8 characters long.
 
-## Sample notes
+## Two notes folders, and why
 
-The committed `sample-notes/` folder must hold small, non-sensitive placeholder notes so a mentor
-can clone the repository and run the tool.
+`sample-notes/` is **committed**. It holds small, non-sensitive notes so a mentor or reviewer can
+clone the repository and run the tool immediately. A submission whose corpus is empty does not
+function as described.
+
+`my-notes/` is **git-ignored** and holds the learner's own notes. Point `ASKMYDOCS_NOTES_FOLDER` at
+it for real use. Never place personal notes in `sample-notes/`.
 
 ## Before any commit
 

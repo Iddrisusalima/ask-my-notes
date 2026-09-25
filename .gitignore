@@ -3,9 +3,9 @@
 .env.local
 *.key
 
-# Personal notes: keep the folder and its README, exclude the note files
-sample-notes/*
-!sample-notes/README.md
+# sample-notes/ is the COMMITTED, non-sensitive corpus a reviewer clones and runs.
+# Keep your own private notes in my-notes/ instead, which is ignored below.
+my-notes/
 
 # Vector store and ingest state
 .chroma/

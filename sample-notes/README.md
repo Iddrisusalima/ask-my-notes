@@ -1,40 +1,21 @@
-# Sample notes
+﻿# sample-notes
 
-This folder holds the note corpus the pipeline runs against. It is the default value of
-`ASKMYDOCS_NOTES_FOLDER`.
+The corpus this repository ships with. Six short markdown notes, deliberately
+non-sensitive, so anyone can clone the repository and run the tool immediately.
 
-## Expected contents
+**These files are committed.** Do not put personal notes here. Keep your own notes in
+`my-notes/`, which `.gitignore` excludes, and point the tool at it:
 
-Put **5 to 10 note files** here. Fewer than 5 or more than 10 supported files is not an error —
-the tool emits a warning stating the discovered count and this recommended range, and then
-processes every discovered file anyway.
+```powershell
+$env:ASKMYDOCS_NOTES_FOLDER = "my-notes"
+```
 
-## Supported file extensions
+## What belongs here
 
-| Extension | Loader |
-|---|---|
-| `.pdf` | PDF page text extraction |
-| `.md` | markdown, full text preserved |
-| `.markdown` | markdown, full text preserved |
+- 5 to 10 note files. This README is not counted as one.
+- Supported extensions: `.pdf`, `.md`, `.markdown`, matched case-insensitively.
+- Files are discovered recursively. Entries beginning with a period, symbolic links, and
+  this README are skipped.
 
-Extensions are matched without regard to letter case, so `.PDF` and `.Md` are discovered too.
-Files with any other extension are skipped and listed with their extension.
-
-## This README is not a note file
-
-`README.md` in this folder is excluded from discovery and **is not counted** toward the 5 to 10
-note files. The count covers only the supported note files beside it.
-
-Also excluded from discovery:
-
-- every entry whose name begins with a period
-- every symbolic link, which is listed among the skipped entries with its reason
-
-Subdirectories **are** scanned: a supported file nested at any depth below this folder is
-discovered.
-
-## Version control
-
-Personal note files in this folder are git-ignored. Only this README is tracked, so cloning the
-repository gives you the folder and these instructions but none of anyone else's notes. Keep
-anything committed here small and non-sensitive.
+At the default chunk size of 500 with 50 characters of overlap, the six notes here
+produce 20 chunks.
