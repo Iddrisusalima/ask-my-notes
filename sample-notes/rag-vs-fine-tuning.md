@@ -1,4 +1,4 @@
-﻿# RAG versus fine-tuning
+# RAG versus fine-tuning
 
 Both change what a model can do for you. They are not alternatives so much as
 answers to different questions.

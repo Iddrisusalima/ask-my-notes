@@ -1,4 +1,4 @@
-﻿# Privacy and secrets
+# Privacy and secrets
 
 ## Never commit
 

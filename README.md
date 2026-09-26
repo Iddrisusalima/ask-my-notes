@@ -1,9 +1,9 @@
-﻿# Ask My Docs
+# Ask My Docs
 
 A from-scratch Retrieval-Augmented Generation tool over your own PDF and markdown notes.
 It splits documents into overlapping chunks, embeds each chunk, stores them in a local
 vector database, retrieves the chunks most similar to your question, and answers using
-only that retrieved context — with citations back to the source file and character range.
+only that retrieved context - with citations back to the source file and character range.
 Every stage is hand-written: no LangChain, no LlamaIndex, no framework that hides a step.
 
 The committed `sample-notes/` corpus is six short markdown notes on embeddings, chunking,

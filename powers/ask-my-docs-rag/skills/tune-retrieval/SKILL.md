@@ -1,4 +1,4 @@
-﻿---
+---
 name: tune-retrieval
 description: Diagnose and fix poor RAG answers by reading the retrieval log first, then changing Top_K, the relevance threshold, chunk size, and the system prompt in cost order. Use when answers are wrong, vague, or cite the wrong chunk.
 ---

@@ -1,4 +1,4 @@
-﻿# Technology and configuration
+# Technology and configuration
 
 ## Runtime and packaging
 
@@ -20,8 +20,8 @@
 
 ## Not allowed
 
-RAG or agent orchestration frameworks — LangChain, LlamaIndex, Haystack, or any package supplying
-pre-built loading, chunking, retrieval, re-ranking, or prompt-orchestration pipelines — and hosted
+RAG or agent orchestration frameworks - LangChain, LlamaIndex, Haystack, or any package supplying
+pre-built loading, chunking, retrieval, re-ranking, or prompt-orchestration pipelines - and hosted
 vector database clients. If a task seems to need one, the task is wrong.
 
 ## Configuration
@@ -34,7 +34,7 @@ setting name, and `.env.example` plus the README are the source of truth for bot
 |---|---|---|
 | Embedding provider | `ASKMYDOCS_PROVIDER` | `sentence-transformers` |
 | Model name | `ASKMYDOCS_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` (local); `text-embedding-3-small` (openai) |
-| API key | `OPENAI_API_KEY` | none — required only for the `openai` provider |
+| API key | `OPENAI_API_KEY` | none - required only for the `openai` provider |
 | Notes folder | `ASKMYDOCS_NOTES_FOLDER` | `sample-notes` |
 | Chunk size | `ASKMYDOCS_CHUNK_SIZE` | `500` |
 | Chunk overlap | `ASKMYDOCS_CHUNK_OVERLAP` | `50` |
@@ -43,7 +43,7 @@ setting name, and `.env.example` plus the README are the source of truth for bot
 | Max input length | `ASKMYDOCS_MAX_INPUT_LENGTH` | `8000` |
 | Max batch size | `ASKMYDOCS_MAX_BATCH_SIZE` | `64` |
 | Max chunks per run | `ASKMYDOCS_MAX_CHUNKS_PER_RUN` | `2000` |
-| Embedding dimensionality | `ASKMYDOCS_EMBEDDING_DIM` | unset — resolved offline for known models |
+| Embedding dimensionality | `ASKMYDOCS_EMBEDDING_DIM` | unset - resolved offline for known models |
 | Store selection | store selection | `chroma` |
 | Persist directory | `Persist_Directory` | `.chroma` |
 | Collection name | `Collection_Name` | `ask_my_docs` |

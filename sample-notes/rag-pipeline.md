@@ -1,4 +1,4 @@
-﻿# The RAG pipeline, end to end
+# The RAG pipeline, end to end
 
 Two phases. Ingest happens once per change to the notes. Answering happens per
 question.

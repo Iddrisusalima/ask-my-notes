@@ -1,4 +1,4 @@
-﻿# Repository structure and conventions
+# Repository structure and conventions
 
 ```
 pyproject.toml            pinned dependencies, editable install
@@ -23,16 +23,16 @@ tests/
 
 ## Module responsibilities
 
-- **config** — reads every setting from the environment, validates it, resolves paths.
-- **reporting** — the single output channel; redacts the API key.
-- **similarity** — cosine similarity over float64 vectors.
-- **chunking** — splits text into overlapping chunks with code point offsets.
-- **loading** — discovers note files and extracts text per format.
-- **embeddings** — provider-agnostic embedder interface plus implementations.
-- **stores** — vector storage behind one interface; in-memory and Chroma.
-- **retrieval** — embeds a question, ranks hits, applies the threshold, logs the retrieval.
-- **ingest** — incremental chunk-embed-upsert driven by a source manifest.
-- **evaluation** — question sets, top-K tuning, relevance review, precision@K.
+- **config** - reads every setting from the environment, validates it, resolves paths.
+- **reporting** - the single output channel; redacts the API key.
+- **similarity** - cosine similarity over float64 vectors.
+- **chunking** - splits text into overlapping chunks with code point offsets.
+- **loading** - discovers note files and extracts text per format.
+- **embeddings** - provider-agnostic embedder interface plus implementations.
+- **stores** - vector storage behind one interface; in-memory and Chroma.
+- **retrieval** - embeds a question, ranks hits, applies the threshold, logs the retrieval.
+- **ingest** - incremental chunk-embed-upsert driven by a source manifest.
+- **evaluation** - question sets, top-K tuning, relevance review, precision@K.
 
 ## The architectural seam
 

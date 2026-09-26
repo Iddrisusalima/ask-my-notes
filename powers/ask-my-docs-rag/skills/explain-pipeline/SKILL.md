@@ -1,4 +1,4 @@
-﻿---
+---
 name: explain-pipeline
 description: Rehearse the end-to-end RAG explanation and the six project self-check answers, including embeddings without the word vector, chunk size effects, vector search, and RAG versus fine-tuning.
 ---
@@ -32,7 +32,7 @@ strongly. A chunk too small loses the surrounding sentences that made it meaning
 text is on-topic but unusable. Overlap exists so a fact straddling a boundary survives in one piece.
 
 **How does a vector database find similar chunks?** It compares the question's embedding against the
-stored ones under a distance metric — here cosine, which measures direction rather than magnitude.
+stored ones under a distance metric - here cosine, which measures direction rather than magnitude.
 Scanning every stored vector is exact but linear, so the database builds a proximity graph index and
 walks it, trading a small amount of exactness for speed. At this corpus size the search is exact.
 

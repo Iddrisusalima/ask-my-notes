@@ -1,4 +1,4 @@
-﻿# Chunking strategies
+# Chunking strategies
 
 Splitting matters for two independent reasons. A model has a context limit, so a
 long document cannot be passed whole. And retrieval precision degrades when a

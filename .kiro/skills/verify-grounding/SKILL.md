@@ -1,4 +1,4 @@
-﻿---
+---
 name: verify-grounding
 description: Prove an answer came from retrieved notes rather than model recall, using a positive and a negative grounding question. Use when checking grounding, citation trust, or preparing the demo.
 ---
@@ -11,7 +11,7 @@ training data looks identical on the surface, so grounding has to be demonstrate
 ## The two-question test
 
 **Positive grounding question.** Pick a fact that appears in your notes and nowhere in general
-knowledge — a date you chose, a name you invented, a number specific to your own work. Ask it. A
+knowledge - a date you chose, a name you invented, a number specific to your own work. Ask it. A
 grounded pipeline answers correctly and cites the chunk holding that fact. If it answers correctly but
 cites nothing, the answer is unverified, not grounded.
 

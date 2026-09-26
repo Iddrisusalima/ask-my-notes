@@ -1,4 +1,4 @@
-﻿# Embeddings — working notes
+# Embeddings - working notes
 
 An embedding is the list of numbers a model assigns to a piece of text so that
 texts meaning similar things end up with similar lists. Nobody chose what the

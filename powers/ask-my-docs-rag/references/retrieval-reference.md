@@ -1,4 +1,4 @@
-﻿# Retrieval quality reference
+# Retrieval quality reference
 
 Numbers and defaults the skills refer to. These are the Ask My Docs defaults; adjust for your own corpus.
 

@@ -184,3 +184,127 @@ def redact(text: str, api_key: str | None) -> str:
             if run in result:
                 result = result.replace(run, REDACTION_MARKER)
     return result
+
+
+# --- Week 2 additions -------------------------------------------------------
+# Appended, never interleaved: every Week 1 field, name, and default above is
+# untouched, so existing construction sites and tests stay valid.
+
+SUPPORTED_STORES: Final = ("memory", "chroma")
+SUPPORTED_METRICS: Final = ("cosine",)
+
+
+@dataclass(frozen=True)
+class StoreSettings:
+    """Persistent vector store settings."""
+
+    selection: str = "chroma"
+    persist_directory: Path = Path(".chroma")
+    collection_name: str = "ask_my_docs"
+    distance_metric: str = "cosine"
+    source_manifest: Path = Path(".chroma/ingest-manifest.json")
+
+
+@dataclass(frozen=True)
+class RetrievalSettings:
+    """Retrieval and logging settings."""
+
+    top_k: int = 5
+    relevance_threshold: float = 0.30
+    retrieval_log: Path = Path("logs/retrievals.jsonl")
+    question_set: Path = Path("question-sets/week2-questions.txt")
+
+
+def _repo_root() -> Path:
+    """Anchor relative paths on the package, not the working directory."""
+    return Path(__file__).resolve().parents[2]
+
+
+def _resolve(value: str | None, default: Path) -> Path:
+    path = Path(value) if value else default
+    return path if path.is_absolute() else (_repo_root() / path)
+
+
+def load_store_settings(env: Mapping[str, str] | None = None) -> StoreSettings:
+    """Read the Week 2 store settings, validated."""
+    env = os.environ if env is None else env
+
+    raw_store = _read(env, "ASKMYDOCS_STORE")
+    selection = (raw_store or "chroma").lower()
+    if selection not in SUPPORTED_STORES:
+        raise ConfigurationError(
+            f"ASKMYDOCS_STORE is {raw_store!r}. Supported values are "
+            f"{SUPPORTED_STORES[0]!r} and {SUPPORTED_STORES[1]!r}."
+        )
+
+    raw_metric = _read(env, "ASKMYDOCS_DISTANCE_METRIC")
+    metric = (raw_metric or "cosine").lower()
+    if metric not in SUPPORTED_METRICS:
+        raise ConfigurationError(
+            f"ASKMYDOCS_DISTANCE_METRIC is {raw_metric!r}. Week 2 supports only "
+            f"'cosine', so that a score means the same thing as the "
+            f"Similarity_Calculator's cosine similarity."
+        )
+
+    name = _read(env, "ASKMYDOCS_COLLECTION") or "ask_my_docs"
+    if not (3 <= len(name) <= 63):
+        raise ConfigurationError(
+            f"ASKMYDOCS_COLLECTION is {name!r}; the permitted length is 3 to 63 "
+            f"characters."
+        )
+    if not (name[0].isalnum() and name[-1].isalnum()):
+        raise ConfigurationError(
+            f"ASKMYDOCS_COLLECTION is {name!r}; it must start and end with an "
+            f"ASCII letter or digit."
+        )
+    if any(ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for ch in name):
+        raise ConfigurationError(
+            f"ASKMYDOCS_COLLECTION is {name!r}; only ASCII letters, digits, hyphens, "
+            f"and underscores are permitted."
+        )
+
+    return StoreSettings(
+        selection=selection,
+        persist_directory=_resolve(_read(env, "ASKMYDOCS_PERSIST_DIR"), Path(".chroma")),
+        collection_name=name,
+        distance_metric=metric,
+        source_manifest=_resolve(
+            _read(env, "ASKMYDOCS_SOURCE_MANIFEST"), Path(".chroma/ingest-manifest.json")
+        ),
+    )
+
+
+def load_retrieval_settings(env: Mapping[str, str] | None = None) -> RetrievalSettings:
+    """Read the Week 2 retrieval settings, validated."""
+    env = os.environ if env is None else env
+
+    top_k = _parse_int(env, "ASKMYDOCS_TOP_K", 5)
+    if not (1 <= top_k <= 100):
+        raise ConfigurationError(
+            f"ASKMYDOCS_TOP_K is {top_k}; the permitted range is 1 to 100."
+        )
+
+    raw_threshold = _read(env, "ASKMYDOCS_RELEVANCE_THRESHOLD")
+    try:
+        threshold = float(raw_threshold) if raw_threshold else 0.30
+    except ValueError as exc:
+        raise ConfigurationError(
+            f"ASKMYDOCS_RELEVANCE_THRESHOLD is {raw_threshold!r}, which is not a "
+            f"decimal number."
+        ) from exc
+    if not (-1.0 <= threshold <= 1.0):
+        raise ConfigurationError(
+            f"ASKMYDOCS_RELEVANCE_THRESHOLD is {threshold}; the permitted range is "
+            f"-1.0 to 1.0, because it is compared against a cosine similarity."
+        )
+
+    return RetrievalSettings(
+        top_k=top_k,
+        relevance_threshold=threshold,
+        retrieval_log=_resolve(
+            _read(env, "ASKMYDOCS_RETRIEVAL_LOG"), Path("logs/retrievals.jsonl")
+        ),
+        question_set=_resolve(
+            _read(env, "ASKMYDOCS_QUESTION_SET"), Path("question-sets/week2-questions.txt")
+        ),
+    )

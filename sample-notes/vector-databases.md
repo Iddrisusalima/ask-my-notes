@@ -1,4 +1,4 @@
-﻿# Vector databases
+# Vector databases
 
 A vector database stores embeddings alongside the text and metadata they came
 from, and answers the question "which stored vectors are nearest this one".

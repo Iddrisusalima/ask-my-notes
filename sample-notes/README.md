@@ -1,4 +1,4 @@
-﻿# sample-notes
+# sample-notes
 
 The corpus this repository ships with. Six short markdown notes, deliberately
 non-sensitive, so anyone can clone the repository and run the tool immediately.

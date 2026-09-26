@@ -1,4 +1,4 @@
-﻿# Evaluating retrieval quality
+# Evaluating retrieval quality
 
 You cannot tune what you do not measure, and "the answers feel better" is not a
 measurement.
