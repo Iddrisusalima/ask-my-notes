@@ -1,0 +1,62 @@
+# Demo video shot list
+
+**Hard limit: 3 minutes.** Nothing past 3:00 is watched. Minimum 30 seconds.
+Target 2:40, which leaves margin.
+
+The video must do two things at once: show the project working, and show where each
+lesson lives. The order below interleaves them so no time is spent on a tour with
+nothing happening.
+
+## Recording on Windows, no install
+
+1. Open the window you want to record (Kiro, or a maximised terminal).
+2. Press **Win + Alt + R** to start recording. A small timer appears.
+3. Press **Win + Alt + R** again to stop.
+4. The file lands in `C:\Users\hp\Videos\Captures` as MP4.
+
+Press **Win + G** first if you want the capture widget, volume, or mic toggle.
+Game Bar records one application window, not the desktop or File Explorer, so start
+it with the terminal or Kiro focused.
+
+Talk over it live, or record silent and add narration in Clipchamp, which ships with
+Windows 11.
+
+## Before you hit record
+
+Run the ingest once so the collection already exists:
+
+```powershell
+python scripts/05_ingest.py
+```
+
+The first ingest takes about 50 seconds because it loads the embedding model and
+embeds 20 chunks. That is too slow for a 3 minute video. Showing the *second* run is
+both faster and a better story: it proves the ingest is incremental.
+
+Have these ready in your terminal history, in order, so you are not typing during the
+recording.
+
+## Shot list
+
+| Time | Shot | Say this | Lesson shown |
+|---|---|---|---|
+| 0:00-0:12 | `README.md` open | "Ask My Docs answers questions about my own notes, using only what it retrieves, with citations. Every RAG stage is hand-written - no LangChain, no framework hiding a step." | - |
+| 0:12-0:32 | Expand `.kiro/` in the sidebar: `specs/`, `steering/`, `hooks/`, `agents/`, `skills/`, `settings/mcp.json` | "Three weekly specs drove this: requirements, design, and tasks. Steering files pin the rules every task follows. Six hooks, three scoped agents, three skills, and an MCP fetch server." | 1, 2, 3, 5, 6, 7 |
+| 0:32-0:45 | Open `.kiro/agents/retrieval-tuner.json` | "The agents have different permission envelopes. This one reads and measures but cannot write, and ingest is gated behind a confirmation because it costs money." | 7 |
+| 0:45-1:05 | `python scripts/05_ingest.py` | "Re-running ingest embeds nothing. A SHA-256 hash per file means unchanged notes are skipped - zero embedder calls, four seconds instead of fifty." | - |
+| 1:05-1:30 | `python scripts/06_query.py "What overlap ratio did I settle on?" --top-k 2` | "Retrieval returns the source file, the chunk index, the exact character range, and a cosine score. The top hit is the chunk that actually contains the answer." | - |
+| 1:30-1:55 | `python scripts/09_ask.py "Why does chunk size affect retrieved context quality?" --top-k 2 --dry-run` | "The full pipeline: retrieve, build a numbered context block, generate, then validate every citation against what was actually supplied. Verified: yes." | - |
+| 1:55-2:20 | `python scripts/09_ask.py "What is the capital city of Mongolia?" --dry-run` | "Asked something my notes do not cover, it refuses. The best score was 0.06 against a threshold of 0.30, so it never even calls the model. That refusal is what makes the other answers trustworthy." | - |
+| 2:20-2:40 | `python -m pytest -q` | "Nineteen property-based tests, two hundred generated cases each. They check things examples cannot: that chunks always reconstruct the original text exactly, and that the Chroma store agrees with my reference implementation." | 4 |
+
+## If you are over time
+
+Cut the agents shot at 0:32 and fold it into the `.kiro` tour. Never cut the refusal
+shot - it is the single most persuasive twenty seconds in the video.
+
+## Publishing
+
+The video must be publicly accessible. Upload to YouTube as Public, or attach it
+natively to the X or LinkedIn post. Then the post needs: the repo link, a 2 to 3
+sentence description, `#KiroUniversity`, `#BuildWithKiro`, and a tag of `@kirodotdev`
+on X or `@kiro` on LinkedIn.
