@@ -60,3 +60,71 @@ The video must be publicly accessible. Upload to YouTube as Public, or attach it
 natively to the X or LinkedIn post. Then the post needs: the repo link, a 2 to 3
 sentence description, `#KiroUniversity`, `#BuildWithKiro`, and a tag of `@kirodotdev`
 on X or `@kiro` on LinkedIn.
+
+---
+
+# Narration, word for word
+
+About 390 words, which lands near 2:40 at a normal speaking pace. Read it as written or
+loosen it to sound like you - just keep the numbers, because the numbers are what make
+it credible.
+
+## 0:00-0:12 - README on screen
+
+"This is Ask My Docs. It answers questions about my own notes using only what it
+retrieves from them, and it cites the exact file and character range every answer came
+from. Every stage is hand-written. No LangChain, no framework hiding a step."
+
+## 0:12-0:32 - expanding the .kiro folder
+
+"I built it with Kiro, spec-first. Three weekly specs: requirements in EARS form, a
+design, and a task list. Steering files pin the rules every task has to follow, like the
+banned-dependency rule and which modules are frozen. Then six hooks, three custom
+agents, three skills, and an MCP server config."
+
+## 0:32-0:45 - retrieval-tuner.json open
+
+"The agents have deliberately different permissions. This one can read my retrieval logs
+and run the measurement scripts, but it cannot write code, and ingest is gated behind a
+confirmation because embedding costs money."
+
+## 0:45-1:05 - running the ingest
+
+"Ingest is incremental. It keeps a SHA-256 hash per file, so re-running it embeds nothing
+- zero embedder calls, about four seconds, where the first run took fifty. And when a
+file does change, it deletes the old chunks before writing the new ones, so a file that
+shrinks does not leave orphans behind still answering queries."
+
+## 1:05-1:30 - running the query
+
+"Here is retrieval on its own. I ask what overlap ratio I settled on, and it returns the
+source file, the chunk index, the exact character range, and a cosine score. The top hit
+is the chunk that literally contains the answer - a ten percent overlap ratio."
+
+## 1:30-1:55 - running the ask script
+
+"Now the whole pipeline. It retrieves, builds a numbered context block, generates an
+answer, then checks every citation marker against what was actually supplied. Verified:
+yes. If the model had invented a citation number, the whole answer would be flagged
+unverified rather than quietly dropping the bad marker."
+
+## 1:55-2:20 - the refusal
+
+"And this is the part I care about most. I ask something my notes do not cover. The best
+match scored 0.06 against a threshold of 0.30, so it refuses - and it never calls the
+model at all. An assistant that always answers is useless, because you cannot tell the
+grounded answers from the invented ones."
+
+## 2:20-2:40 - running the tests
+
+"Nineteen property-based tests, two hundred generated cases each. These check things
+examples cannot: that chunks always reconstruct the original text exactly whatever the
+size and overlap, and that the Chroma store agrees with my in-memory reference
+implementation to seven decimal places."
+
+## One honesty note
+
+If you demo with --dry-run, the answer text comes from a scripted model, not a live one.
+Say so: "the generation step here uses a scripted model so this runs with no API key -
+with a key set it calls the real one." Claiming a live call you did not make is the kind
+of thing that gets a submission disqualified, and the demo is strong without it.
