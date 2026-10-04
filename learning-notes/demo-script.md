@@ -45,8 +45,8 @@ recording.
 | 0:32-0:45 | Open `.kiro/agents/retrieval-tuner.json` | "The agents have different permission envelopes. This one reads and measures but cannot write, and ingest is gated behind a confirmation because it costs money." | 7 |
 | 0:45-1:05 | `python scripts/05_ingest.py` | "Re-running ingest embeds nothing. A SHA-256 hash per file means unchanged notes are skipped - zero embedder calls, four seconds instead of fifty." | - |
 | 1:05-1:30 | `python scripts/06_query.py "What overlap ratio did I settle on?" --top-k 2` | "Retrieval returns the source file, the chunk index, the exact character range, and a cosine score. The top hit is the chunk that actually contains the answer." | - |
-| 1:30-1:55 | `python scripts/09_ask.py "Why does chunk size affect retrieved context quality?" --top-k 2` | "The full pipeline: retrieve, build a numbered context block, generate, then validate every citation against what was actually supplied. Verified: yes." | - |
-| 1:55-2:20 | `python scripts/09_ask.py "What is the capital city of Mongolia?"` | "Asked something my notes do not cover, it refuses. The best score was 0.06 against a threshold of 0.30, so it never even calls the model. That refusal is what makes the other answers trustworthy." | - |
+| 1:30-1:55 | `python scripts/09_ask.py "Why does chunk size affect retrieved context quality?" --top-k 2` | "The full pipeline: retrieve, build a numbered context block, compose the answer from the highest-scoring retrieved sentences, then validate every citation. Verified: yes - and it cannot hallucinate, because every sentence is text from my notes." | - |
+| 1:55-2:20 | `python scripts/09_ask.py "What is the capital city of Mongolia?"` | "Asked something my notes do not cover, it refuses. The best score was 0.06 against a threshold of 0.30, so it refuses before composing anything. That refusal is what makes the other answers trustworthy." | - |
 | 2:20-2:40 | `python -m pytest -q` | "Nineteen property-based tests, two hundred generated cases each. They check things examples cannot: that chunks always reconstruct the original text exactly, and that the Chroma store agrees with my reference implementation." | 4 |
 
 ## If you are over time
@@ -105,15 +105,15 @@ is the chunk that literally contains the answer - a ten percent overlap ratio."
 
 "Now the whole pipeline. It retrieves, builds a numbered context block, composes the
 answer from the highest-scoring retrieved sentences, then checks every citation marker
-against what was actually supplied. Verified: yes. If the model had invented a citation number, the whole answer would be flagged
-unverified rather than quietly dropping the bad marker."
+against what was actually supplied. Verified: yes. Each sentence carries the marker of the chunk it came from, so a
+miscitation is structurally impossible rather than something I asked a model not to do."
 
 ## 1:55-2:20 - the refusal
 
 "And this is the part I care about most. I ask something my notes do not cover. The best
-match scored 0.06 against a threshold of 0.30, so it refuses - and it never calls the
-model at all. An assistant that always answers is useless, because you cannot tell the
-grounded answers from the invented ones."
+match scored 0.06 against a threshold of 0.30, so it refuses outright rather than
+answering from noise. An assistant that always answers is useless, because you cannot
+tell the grounded answers from the invented ones."
 
 ## 2:20-2:40 - running the tests
 
