@@ -84,4 +84,4 @@ hold the automation, the scoped agents, and the workflow guides.
 
 ## Licence
 
-Not yet chosen.
+MIT. See [LICENSE](LICENSE).
