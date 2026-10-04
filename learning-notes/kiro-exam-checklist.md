@@ -23,7 +23,7 @@ then. This is separate from the mentor project deadline of Sunday 4 October 2026
 
 ## Deliverables
 
-- [ ] **Public GitHub repository** named `ask-my-docs`, owned by the entrant.
+- [ ] **Public GitHub repository** named `ask-my-notes`, owned by the entrant.
 - [x] **`.kiro` folder committed**, showing the configuration for every lesson.
 - [ ] **A working project.** Functional, not a static mockup: ingest runs, a question
       returns a cited answer, and a question with no answer in the notes is refused.

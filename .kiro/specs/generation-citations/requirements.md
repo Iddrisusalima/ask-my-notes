@@ -264,7 +264,7 @@ The following terms are carried over unchanged from the Phase 1 and Phase 2 requ
 
 #### Acceptance Criteria
 
-1. THE Submission_Checklist SHALL hold one checkable item for each of: a public GitHub repository named `ask-my-docs`, the committed Sample_Notes_Folder, the recorded demo video of at least 30 seconds and at most 3 minutes, and the repository link plus video link sent to the mentor before Sunday 4 October 2026 23:59.
+1. THE Submission_Checklist SHALL hold one checkable item for each of: a public GitHub repository named `ask-my-notes`, the committed Sample_Notes_Folder, the recorded demo video of at least 30 seconds and at most 3 minutes, and the repository link plus video link sent to the mentor before Sunday 4 October 2026 23:59.
 2. THE Self_Check_Checklist SHALL hold one checkable item for each of: explaining an embedding without using the word "vector", explaining why Chunk_Size affects the quality of retrieved context, explaining how a vector database finds similar Chunks, explaining the full pipeline in under one minute, showing answers that cite their source, and showing graceful handling of a question with no good answer in the notes.
 3. THE Submission_Checklist SHALL record the submission deadline as Sunday 4 October 2026 23:59.
 4. THE Submission_Checklist and the Self_Check_Checklist SHALL be committed markdown files in the Learning_Notes.

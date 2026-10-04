@@ -23,7 +23,7 @@ defeats the purpose of the project.
 
 ## Deadline and submission
 
-Sunday 4 October 2026, 23:59. Submission is a public GitHub repository named `ask-my-docs` plus a
+Sunday 4 October 2026, 23:59. Submission is a public GitHub repository named `ask-my-notes` plus a
 link to a 3-4 minute demo video, sent to the mentor.
 
 ## Definition of done

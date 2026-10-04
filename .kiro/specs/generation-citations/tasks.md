@@ -434,7 +434,7 @@ property per test function. Property 1 runs 200, as the design specifies.
 - [ ] 20. Sun — Submission and self-check checklists
 
   - [ ] 20.1 Write `learning-notes/submission-checklist.md`
-    - One checkable item each for a public GitHub repository named `ask-my-docs`, the committed `sample-notes/` folder, the recorded 3 to 4 minute demo video, and the repository link plus video link sent to the mentor; record the deadline as Sunday 4 October 2026 23:59
+    - One checkable item each for a public GitHub repository named `ask-my-notes`, the committed `sample-notes/` folder, the recorded 3 to 4 minute demo video, and the repository link plus video link sent to the mentor; record the deadline as Sunday 4 October 2026 23:59
     - Add the pre-commit staged-file check for `.env`, personal note files, `.chroma/`, `logs/`, the answer log, and the relevance review CSVs
     - _Requirements: 15.1, 15.3, 15.4, 16.2_
 

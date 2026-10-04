@@ -2,7 +2,7 @@
 
 Replace the two placeholders before posting:
 
-- `REPO_URL`  -> https://github.com/YOUR-USERNAME/ask-my-docs
+- `REPO_URL`  -> https://github.com/YOUR-USERNAME/ask-my-notes
 - `VIDEO_URL` -> the public link to your 30s-3min demo
 
 ## Short description (2-3 sentences)
@@ -102,7 +102,7 @@ config, and a retrieval reference.
 ## Final compliance pass
 
 - [ ] Repo is **public** and owned by you
-- [ ] Repo name `ask-my-docs`
+- [ ] Repo name `ask-my-notes`
 - [ ] `.kiro/` folder committed - 31 files
 - [x] First commit after 21 Sept 09:00 PT, none before
 - [ ] GitHub account at least 3 months old

@@ -25,8 +25,8 @@ Not yet built: document loaders, the embedder, the runnable scripts, and Phases 
 Requires Python 3.10 to 3.12.
 
 ```powershell
-git clone <your-fork-url> ask-my-docs
-cd ask-my-docs
+git clone <your-fork-url> ask-my-notes
+cd ask-my-notes
 python -m pip install -e .
 Copy-Item .env.example .env     # then edit if you want to change a default
 ```
