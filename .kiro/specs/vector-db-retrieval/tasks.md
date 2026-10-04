@@ -271,7 +271,7 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
     - _Requirements: 7.2, 7.4, 7.5, 7.6_
 
   - [ ]* 10.6 Write the loader-equivalence test in `tests/test_ingest_examples.py`
-    - For every committed fixture file assert `document_from_bytes(d, path.read_bytes(), r) == week1_loader.load(d, r)`, so the duplicated PDF logic cannot drift from the frozen Week 1 loader
+    - For every committed fixture file assert `document_from_bytes(d, path.read_bytes(), r) == foundation_loader.load(d, r)`, so the duplicated PDF logic cannot drift from the frozen Week 1 loader
     - _Requirements: 7.1, 18.1, 18.9_
 
   - [ ]* 10.7 Write property test for the content hash in `tests/test_ingest_properties.py`
@@ -393,7 +393,7 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
 
 - [ ] 17. Wed–Thu — Question set and Top-K tuning experiment
 
-  - [ ] 17.1 Write the Question_Set file `question-sets/week2-questions.txt`
+  - [ ] 17.1 Write the Question_Set file `question-sets/retrieval-questions.txt`
     - UTF-8, one question per non-empty line, 5 to 10 distinct questions over the sample notes, including at least one question expected to fall below the `Relevance_Threshold`
     - _Requirements: 1.2, 15.9, 15.11_
 
@@ -477,7 +477,7 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
 
 - [ ] 21. Fri — Week 1 isolation and layering verification
 
-  - [ ] 21.1 Create `tests/week1_baseline.json` and `tests/test_week1_unmodified.py`
+  - [ ] 21.1 Create `tests/foundation_baseline.json` and `tests/test_foundation_unmodified.py`
     - Baseline of CRLF-normalized SHA-256 digests for every frozen module, including `models.py`, generated at the Week 1 completion revision; the test recomputes and fails naming every differing path
     - Add the git cross-check reading each module at the recorded revision via `git show`, skipped with a clear reason when git is unavailable; state in a comment that `config.py` and `stores/factory.py` are deliberately absent from the frozen list, naming Requirements 1.1 and 18.5
     - _Requirements: 18.1, 18.8, 18.9, 18.10_

@@ -14,11 +14,11 @@ defeats the purpose of the project.
 
 ## Three-week plan, one spec per week
 
-- **Week 1 - `week1-embeddings-chunking`**: embeddings, document loading, chunking, and an
+- **Week 1 - `embeddings-chunking`**: embeddings, document loading, chunking, and an
   in-memory store behind a store interface.
-- **Week 2 - `week2-vector-db-retrieval`**: a persistent Chroma store, incremental ingest,
+- **Week 2 - `vector-db-retrieval`**: a persistent Chroma store, incremental ingest,
   retrieval with a relevance threshold, top-K tuning, and retrieval logging.
-- **Week 3 - `week3-generation-citations`**: prompt construction, answer generation, citations,
+- **Week 3 - `generation-citations`**: prompt construction, answer generation, citations,
   evaluation, README, demo, and submission.
 
 ## Deadline and submission

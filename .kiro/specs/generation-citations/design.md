@@ -93,7 +93,7 @@ answer quality â€” `Quality_Rating` is hand-entered by the learner, by desi
 `similarity.py`, `models.py`, `loading/base.py`, `loading/pdf_loader.py`,
 `loading/markdown_loader.py`, and everything under `embeddings/`. Week 3 *imports* from
 `embeddings/retry.py` â€” `RetryPolicy`, `classify_failure`, `FailureKind` â€” and adds nothing to it.
-`tests/test_week1_unmodified.py` (Week 2, Requirement 18.9) already content-checks the frozen set and
+`tests/test_foundation_unmodified.py` (Week 2, Requirement 18.9) already content-checks the frozen set and
 is extended with the Week 2 retrieval and store modules for Week 3's run.
 
 **Changed, additively, once each:**
@@ -122,8 +122,8 @@ class GenerationSettings:
     context_budget: int = 12000                                              # Req 1.1, 1.4
     chat_model: str = "gpt-4o-mini"                                          # Req 1.1, 1.5
     answer_log_path: Path = Path("logs/answers.jsonl")                       # Req 1.1, 1.6
-    evaluation_question_set_path: Path = Path("question-sets/week3-questions.txt")  # Req 1.1, 1.6
-    evaluation_report_path: Path = Path("reports/week3-evaluation.md")        # Req 1.1, 1.6
+    evaluation_question_set_path: Path = Path("question-sets/evaluation-questions.txt")  # Req 1.1, 1.6
+    evaluation_report_path: Path = Path("reports/evaluation.md")        # Req 1.1, 1.6
 
     @property
     def evaluation_run_path(self) -> Path:
@@ -154,8 +154,8 @@ screaming-snake setting name â€” and land in `.env.example` and the README 
 | `Context_Budget` | `ASKMYDOCS_CONTEXT_BUDGET` | `12000` | strict integer, 1000â€“200000 inclusive; error names the setting, the rejected value, and the range (Req 1.4) |
 | `Chat_Model` | `ASKMYDOCS_CHAT_MODEL` | `gpt-4o-mini` | non-empty after `strip()`; error names the setting (Req 1.5) |
 | `Answer_Log` | `ASKMYDOCS_ANSWER_LOG` | `logs/answers.jsonl` | resolved against the repository root, returned absolute (Req 1.6) |
-| `Evaluation_Question_Set` | `ASKMYDOCS_EVALUATION_QUESTION_SET` | `question-sets/week3-questions.txt` | as above (Req 1.6) |
-| `Evaluation_Report` | `ASKMYDOCS_EVALUATION_REPORT` | `reports/week3-evaluation.md` | as above (Req 1.6) |
+| `Evaluation_Question_Set` | `ASKMYDOCS_EVALUATION_QUESTION_SET` | `question-sets/evaluation-questions.txt` | as above (Req 1.6) |
+| `Evaluation_Report` | `ASKMYDOCS_EVALUATION_REPORT` | `reports/evaluation.md` | as above (Req 1.6) |
 
 Four notes. `Chat_Provider` is validated independently of `ASKMYDOCS_PROVIDER`, the Week 1
 `Embedding_Provider` setting: the two are separate settings and **every combination of them is
@@ -187,9 +187,9 @@ RAG/
 â”œâ”€â”€ pyproject.toml                     # CHANGED: openai pin already present; hypothesis profile "week3"
 â”œâ”€â”€ README.md                          # CHANGED: Req 1.8, 13.1-13.8 (incl. the exit-status table)
 â”œâ”€â”€ .env.example                       # CHANGED: Req 1.8 â€” six Week 3 variables + defaults + range
-â”œâ”€â”€ .gitignore                         # CHANGED: logs/answers.jsonl, reports/week3-evaluation*  (Req 10.7, 16.2)
+â”œâ”€â”€ .gitignore                         # CHANGED: logs/answers.jsonl, reports/evaluation*  (Req 10.7, 16.2)
 â”œâ”€â”€ question-sets/
-â”‚   â””â”€â”€ week3-questions.txt            # Evaluation_Question_Set, >= 10 lines, >= 1 negative  (Req 5.3, 11.6)
+â”‚   â””â”€â”€ evaluation-questions.txt            # Evaluation_Question_Set, >= 10 lines, >= 1 negative  (Req 5.3, 11.6)
 â”œâ”€â”€ learning-notes/
 â”‚   â”œâ”€â”€ rag-vs-fine-tuning.md          # RAG_Versus_Fine_Tuning_Note                    (Req 14.1)
 â”‚   â”œâ”€â”€ demo-script.md                 # Demo_Script                                    (Req 14.2, 14.3)
@@ -198,9 +198,9 @@ RAG/
 â”œâ”€â”€ docs/
 â”‚   â””â”€â”€ example-answer.png             # Example_Screenshot, committed                   (Req 13.6)
 â”œâ”€â”€ reports/
-â”‚   â”œâ”€â”€ week3-evaluation.md            # Evaluation_Report, score mode                   (Req 11.3)
-â”‚   â”œâ”€â”€ week3-evaluation-run.json      # machine-owned generate output, git-ignored      (Req 11.1)
-â”‚   â””â”€â”€ week3-evaluation-ratings.csv   # hand-rated, git-ignored                         (Req 11.2)
+â”‚   â”œâ”€â”€ evaluation.md            # Evaluation_Report, score mode                   (Req 11.3)
+â”‚   â”œâ”€â”€ evaluation-run.json      # machine-owned generate output, git-ignored      (Req 11.1)
+â”‚   â””â”€â”€ evaluation-ratings.csv   # hand-rated, git-ignored                         (Req 11.2)
 â”œâ”€â”€ scripts/
 â”‚   â”œâ”€â”€ 09_ask.py                      # Ask_Script                                     (Req 9)
 â”‚   â””â”€â”€ 10_evaluate.py                 # Evaluation_Script, generate + score subcommands (Req 11)
@@ -1085,11 +1085,11 @@ immediately when fewer than 10 distinct non-empty lines remain, naming the count
 order, which means every evaluation question also lands in the `Answer_Log` and in the Week 2
 `Retrieval_Log` exactly as an interactive question would. Two files are written:
 
-- `reports/week3-evaluation-run.json` â€” machine-owned, never hand-edited: the `Configuration_Stamp`,
+- `reports/evaluation-run.json` â€” machine-owned, never hand-edited: the `Configuration_Stamp`,
   the generation timestamp, and per question the identifier, the question text, the outcome, every
   retrieved `Similarity_Score`, the answer text, the cited `Citation_Table` entries, the
   `Prompt_Hash`, the `Dropped_Chunk_Count`, and the `Token_Usage` (Requirement 11.1).
-- `reports/week3-evaluation-ratings.csv` â€” the only hand-edited artifact, three columns
+- `reports/evaluation-ratings.csv` â€” the only hand-edited artifact, three columns
   `question_id,question,quality_rating`, the rating column empty (Requirement 11.2).
 
 **Why two files rather than one.** Requirement 11.2 puts an empty rating field in generate mode and
@@ -1440,7 +1440,7 @@ Week 3's testable surface is unusually well suited to property-based testing: `P
 below runs against in-memory values with no network and no real clock.
 
 All property tests use Hypothesis, run with `@settings(max_examples=100)` at minimum, and carry a tag
-comment of the form `# Feature: week3-generation-citations, Property N: <property text>`.
+comment of the form `# Feature: generation-citations, Property N: <property text>`.
 
 ### Shared strategies (`tests/strategies_week3.py`)
 
@@ -1894,7 +1894,7 @@ evaluation run and its hand-entered `Quality_Ratings`, which is exactly what Req
 ### Property test configuration
 
 Every property test carries the tag comment
-`# Feature: week3-generation-citations, Property N: <property text>` and runs with
+`# Feature: generation-citations, Property N: <property text>` and runs with
 `@settings(max_examples=100)` at minimum â€” Property 1 uses 200. Each of the fourteen properties is
 implemented as exactly one property-based test function; where a property has several conjuncts, they are
 assertions inside that one test rather than separate tests, so the mapping from design property to test

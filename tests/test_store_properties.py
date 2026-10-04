@@ -1,6 +1,6 @@
 ﻿"""Property tests for the in-memory store.
 
-Feature: week1-embeddings-chunking, Properties 14-19.
+Feature: embeddings-chunking, Properties 14-19.
 Each test states the acceptance criteria it validates.
 """
 

@@ -8,7 +8,7 @@
   "resources": [
     "skill://verify-grounding",
     "file://logs/answers.jsonl",
-    "file://reports/week3-evaluation.md"
+    "file://reports/evaluation.md"
   ],
   "permissions": {
     "rules": [

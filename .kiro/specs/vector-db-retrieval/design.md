@@ -48,7 +48,7 @@ Prompt construction, LLM answer generation, citations inside generated answers, 
 
 ### What changes in Week 1, and what does not
 
-The frozen set is the six modules named in Requirement 18.1: `chunking.py`, `embeddings/` (Embedder), `loading/base.py`, `loading/pdf_loader.py`, `loading/markdown_loader.py`, and `similarity.py`. At the end of Week 2 every one of them is **byte-identical** to its content at the Week 1 completion revision, checked by `tests/test_week1_unmodified.py` (Requirement 18.9). `models.py` is also unchanged: no field is added to `Chunk` (Requirement 18.8), and every new data model lives in a new module.
+The frozen set is the six modules named in Requirement 18.1: `chunking.py`, `embeddings/` (Embedder), `loading/base.py`, `loading/pdf_loader.py`, `loading/markdown_loader.py`, and `similarity.py`. At the end of Week 2 every one of them is **byte-identical** to its content at the Week 1 completion revision, checked by `tests/test_foundation_unmodified.py` (Requirement 18.9). `models.py` is also unchanged: no field is added to `Chunk` (Requirement 18.8), and every new data model lives in a new module.
 
 Exactly two pre-existing modules change, and each change is required by name:
 
@@ -95,7 +95,7 @@ One consequence to state plainly, because Requirement 18.6 depends on it: the de
 | A mixin: `class InMemoryAdminMixin(StoreAdminInterface)` composed as `class InMemoryAdminStore(InMemoryAdminMixin, InMemoryStore)` | Rejected. The mixin still has to reach into `InMemoryStore`'s `_records` and `_dimensionality`, so the coupling is identical, but it is now split across two classes and the MRO has to be reasoned about. A mixin earns its keep when it is composed into more than one base; there is exactly one base here. |
 | **Chosen:** a subclass, `stores/memory_admin.py::InMemoryAdminStore(InMemoryStore, StoreAdminInterface)` | One new file, no edit to Week 1, one concrete type for the factory and the conformance suite to instantiate, and `isinstance(store, InMemoryStore)` still true so Requirements 18.5, 18.6, and 18.10 are unaffected. |
 
-The subclass reads and rewrites `self._records` and `self._dimensionality`, which are Week 1 private attributes. That coupling is the accepted cost, and it is bounded: the subclass reimplements none of `add`, `count`, `query`, or the Week 1 validation order, and `tests/test_week1_unmodified.py` fails loudly if `memory.py` ever changes shape underneath it. Adding a protected accessor to `memory.py` would be cleaner in the abstract and is rejected only because it would modify a Week 1 module during the very week whose point is that Week 1 does not need modifying.
+The subclass reads and rewrites `self._records` and `self._dimensionality`, which are Week 1 private attributes. That coupling is the accepted cost, and it is bounded: the subclass reimplements none of `add`, `count`, `query`, or the Week 1 validation order, and `tests/test_foundation_unmodified.py` fails loudly if `memory.py` ever changes shape underneath it. Adding a protected accessor to `memory.py` would be cleaner in the abstract and is rejected only because it would modify a Week 1 module during the very week whose point is that Week 1 does not need modifying.
 
 ### Repository layout — Week 2 delta
 
@@ -108,7 +108,7 @@ RAG/
 ├── .env.example                      # CHANGED: Req 1.10 — every Week 2 variable + default + range
 ├── .gitignore                        # CHANGED: .chroma/, logs/, reports/relevance-review*.csv  (Req 1.11)
 ├── question-sets/
-│   └── week2-questions.txt           # Question_Set, 5-10 lines                        (Req 15 glossary)
+│   └── retrieval-questions.txt           # Question_Set, 5-10 lines                        (Req 15 glossary)
 ├── learning-notes/
 │   └── vector-db-comparison.md       # Comparison_Note                                 (Req 17)
 ├── reports/
@@ -159,7 +159,7 @@ RAG/
     ├── test_topk_experiment.py       # Req 15, Property 21
     ├── test_relevance_review.py      # Req 16, Properties 22, 27
     ├── test_layering_week2.py        # Req 18.2, 18.3, 18.7 import-graph scan
-    ├── test_week1_unmodified.py      # Req 18.9 content check of the frozen six
+    ├── test_foundation_unmodified.py      # Req 18.9 content check of the frozen six
     └── test_scripts_week2.py         # Req 9, 13, 15, 16 script-level behaviour
 ```
 
@@ -445,7 +445,7 @@ class RetrievalSettings:
     top_k: int = 5                                         # Req 1.2, 1.6
     relevance_threshold: float = 0.30                      # Req 1.2, 1.7
     retrieval_log_path: Path = Path("logs/retrievals.jsonl")     # Req 1.2, 1.9
-    question_set_path: Path = Path("question-sets/week2-questions.txt")  # Req 1.2, 1.9
+    question_set_path: Path = Path("question-sets/retrieval-questions.txt")  # Req 1.2, 1.9
 
 
 @dataclass(frozen=True)
@@ -1016,7 +1016,7 @@ def classify(discovered: Sequence[str], hashes: Mapping[str, str],
 
 `document_from_bytes` deserves its own note, because it is the one place Week 2 does not simply call a Week 1 function. Requirement 7.1 requires the bytes hashed and the bytes loaded to come from a single read pass, but Week 1's loaders take a `DiscoveredFile` and open the path themselves, and Requirement 18.9 forbids adding a `load_bytes` entry point to them. So `document_from_bytes` reconstructs the Document from bytes using Week 1's **public** helpers wherever they suffice — `decode_utf8` and `normalize_newlines` from `loading/base.py` are exactly what `MarkdownLoader` itself uses, so the markdown path is a composition, not a reimplementation. The PDF path constructs `PdfReader(io.BytesIO(data))` and joins per-page text with a single line feed, which does duplicate about ten lines of `PdfLoader`'s logic.
 
-That duplication is the accepted cost, and it is fenced: `tests/test_ingest_examples.py` asserts, for every committed fixture file, that `document_from_bytes(d, path.read_bytes(), r) == week1_loader.load(d, r)`. A differential test against the original is a stronger guard than a comment, and it turns any future divergence into a failing test rather than a silent difference between what the pipeline script sees and what the ingest script sees. The cleaner fix — Week 1's loaders exposing `load_bytes` and defining `load` in terms of it — is noted here as the right change to make at the start of Week 3, when the frozen-content check for Week 1 has served its purpose.
+That duplication is the accepted cost, and it is fenced: `tests/test_ingest_examples.py` asserts, for every committed fixture file, that `document_from_bytes(d, path.read_bytes(), r) == foundation_loader.load(d, r)`. A differential test against the original is a stronger guard than a comment, and it turns any future divergence into a failing test rather than a silent difference between what the pipeline script sees and what the ingest script sees. The cleaner fix — Week 1's loaders exposing `load_bytes` and defining `load` in terms of it — is noted here as the right change to make at the start of Week 3, when the frozen-content check for Week 1 has served its purpose.
 
 ### Scripts
 
@@ -2293,7 +2293,7 @@ Unit test count is kept deliberately low. There are no unit tests enumerating st
 Every property test carries the mandated comment immediately above the function, so a failure traces straight back to this document:
 
 ```python
-# Feature: week2-vector-db-retrieval, Property 6: For all sequences of 1 to 50 Chunks
+# Feature: vector-db-retrieval, Property 6: For all sequences of 1 to 50 Chunks
 # with bounded Embedding_Vectors added in the same order to an empty In_Memory_Store
 # and an empty Chroma_Store, and for all bounded query vectors and all K from 1 to 50,
 # the sequence of chunk ids the Chroma_Store returns equals the sequence the
@@ -2394,7 +2394,7 @@ FROZEN_MODULES = ("src/askmydocs/chunking.py", "src/askmydocs/similarity.py",
                   "src/askmydocs/embeddings/openai_provider.py",
                   "src/askmydocs/embeddings/local_provider.py",
                   "src/askmydocs/models.py")
-WEEK1_REVISION = "week1-complete"          # an annotated tag, created at Week 1 sign-off
+FOUNDATION_REVISION = "foundation-complete"          # an annotated tag, created at Week 1 sign-off
 
 
 def normalized_sha256(path: Path) -> str:
@@ -2403,9 +2403,9 @@ def normalized_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 ```
 
-**Track 1, the committed baseline.** `tests/week1_baseline.json` holds `{path: normalized_sha256}` for every frozen module, generated once at the Week 1 tag. The test recomputes and compares, failing with the list of every differing path. This works in any checkout, including a source archive with no git history, and it is the track that actually runs in CI.
+**Track 1, the committed baseline.** `tests/foundation_baseline.json` holds `{path: normalized_sha256}` for every frozen module, generated once at the Week 1 tag. The test recomputes and compares, failing with the list of every differing path. This works in any checkout, including a source archive with no git history, and it is the track that actually runs in CI.
 
-**Track 2, the git cross-check.** When a git repository is present, the test additionally reads each module's content at `WEEK1_REVISION` via `git show` and compares. This closes track 1's hole: a baseline file is itself editable, so someone modifying a frozen module and regenerating the baseline would pass track 1. Track 2 is skipped with a clear reason when git is unavailable rather than silently passing.
+**Track 2, the git cross-check.** When a git repository is present, the test additionally reads each module's content at `FOUNDATION_REVISION` via `git show` and compares. This closes track 1's hole: a baseline file is itself editable, so someone modifying a frozen module and regenerating the baseline would pass track 1. Track 2 is skipped with a clear reason when git is unavailable rather than silently passing.
 
 `models.py` is in the frozen list even though Requirement 18.1 does not name it, because Requirement 18.8 forbids adding any field to `Chunk` and byte-identity is the cheapest way to guarantee that. `config.py` and `stores/factory.py` are deliberately **absent** from the list, and the test module says so in a comment naming Requirements 1.1 and 18.5 — so a future reader does not "fix" the omission.
 

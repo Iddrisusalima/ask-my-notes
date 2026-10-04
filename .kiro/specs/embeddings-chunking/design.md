@@ -1449,7 +1449,7 @@ Unit test count is kept deliberately low. There are no unit tests enumerating ch
 **Property test tagging.** Every property test carries a comment in the mandated form, immediately above the test function, so a failure traces straight back to this document:
 
 ```python
-# Feature: week1-embeddings-chunking, Property 7: For all Documents and all valid
+# Feature: embeddings-chunking, Property 7: For all Documents and all valid
 # configurations, the concatenation of the first Chunk's text with the text of every
 # subsequent Chunk after removing that Chunk's leading Chunk_Overlap characters
 # equals the Document text exactly.

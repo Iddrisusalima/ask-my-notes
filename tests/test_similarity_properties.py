@@ -1,6 +1,6 @@
 ﻿"""Property tests for cosine similarity.
 
-Feature: week1-embeddings-chunking, Properties 1-4.
+Feature: embeddings-chunking, Properties 1-4.
 Each test states the acceptance criteria it validates.
 """
 

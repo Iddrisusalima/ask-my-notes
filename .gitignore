@@ -15,8 +15,8 @@ logs/
 
 # Generated evaluation artifacts
 reports/relevance-review*.csv
-reports/week3-evaluation-run.json
-reports/week3-evaluation-ratings.csv
+reports/evaluation-run.json
+reports/evaluation-ratings.csv
 
 # Python
 __pycache__/

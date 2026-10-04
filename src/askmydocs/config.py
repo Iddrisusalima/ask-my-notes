@@ -212,7 +212,7 @@ class RetrievalSettings:
     top_k: int = 5
     relevance_threshold: float = 0.30
     retrieval_log: Path = Path("logs/retrievals.jsonl")
-    question_set: Path = Path("question-sets/week2-questions.txt")
+    question_set: Path = Path("question-sets/retrieval-questions.txt")
 
 
 def _repo_root() -> Path:
@@ -305,6 +305,6 @@ def load_retrieval_settings(env: Mapping[str, str] | None = None) -> RetrievalSe
             _read(env, "ASKMYDOCS_RETRIEVAL_LOG"), Path("logs/retrievals.jsonl")
         ),
         question_set=_resolve(
-            _read(env, "ASKMYDOCS_QUESTION_SET"), Path("question-sets/week2-questions.txt")
+            _read(env, "ASKMYDOCS_QUESTION_SET"), Path("question-sets/retrieval-questions.txt")
         ),
     )

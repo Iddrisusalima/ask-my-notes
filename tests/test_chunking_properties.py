@@ -1,6 +1,6 @@
 ﻿"""Property tests for the chunker.
 
-Feature: week1-embeddings-chunking, Properties 5-13.
+Feature: embeddings-chunking, Properties 5-13.
 Each test states the acceptance criteria it validates.
 """
 

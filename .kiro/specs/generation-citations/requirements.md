@@ -47,11 +47,11 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 - **Grounding_Check**: One of the two Week 3 checks that the answer text depends on retrieved context: the Positive_Grounding_Question and the Negative_Grounding_Question.
 - **Positive_Grounding_Question**: A question whose answer appears in the Sample_Notes_Folder and nowhere in the System_Prompt, used to confirm that the presented answer draws on the Context_Block.
 - **Negative_Grounding_Question**: A question whose answer appears nowhere in the Sample_Notes_Folder, used to confirm that Ask_My_Docs refuses rather than inventing an answer.
-- **Evaluation_Question_Set**: The UTF-8 text file holding the Week 3 evaluation questions, one question per non-empty line. Setting name `Evaluation_Question_Set`, default path `question-sets/week3-questions.txt`. Required question count at least 10, of which at least one is a Negative_Grounding_Question.
+- **Evaluation_Question_Set**: The UTF-8 text file holding the Week 3 evaluation questions, one question per non-empty line. Setting name `Evaluation_Question_Set`, default path `question-sets/evaluation-questions.txt`. Required question count at least 10, of which at least one is a Negative_Grounding_Question.
 - **Evaluation_Script**: The runnable script that runs every question of the Evaluation_Question_Set, records the results, accepts the Quality_Ratings, and writes the Evaluation_Report.
 - **Quality_Rating**: The hand-entered integer from 1 to 5 recording the learner's judgement of one answer, or empty for not yet rated.
 - **Mean_Quality_Rating**: The arithmetic mean of the non-empty Quality_Ratings of one evaluation run, rounded to two decimal places.
-- **Evaluation_Report**: The markdown file holding, for every question of the Evaluation_Question_Set, the answer, the citations, the retrieval Similarity_Scores, and the Quality_Rating, plus the Mean_Quality_Rating and the Configuration_Stamp. Setting name `Evaluation_Report`, default path `reports/week3-evaluation.md`.
+- **Evaluation_Report**: The markdown file holding, for every question of the Evaluation_Question_Set, the answer, the citations, the retrieval Similarity_Scores, and the Quality_Rating, plus the Mean_Quality_Rating and the Configuration_Stamp. Setting name `Evaluation_Report`, default path `reports/evaluation.md`.
 - **Configuration_Stamp**: The record of every Configuration setting name and resolved value in force for one evaluation run, with the API key value replaced by Reporter-style redaction.
 - **Malformed_Model_Output**: A chat completions response carrying no message content, or carrying message content that is empty after removal of surrounding whitespace.
 - **Readme**: The repository file `README.md`.

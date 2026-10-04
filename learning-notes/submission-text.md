@@ -61,8 +61,8 @@ Required in both the social post and the entry form.
 
 Paste this into the writeup field.
 
-**Lesson 1, Specs.** Three weekly specs under `.kiro/specs/` - week1-embeddings-chunking,
-week2-vector-db-retrieval, week3-generation-citations - each with requirements in EARS
+**Lesson 1, Specs.** Three weekly specs under `.kiro/specs/` - embeddings-chunking,
+vector-db-retrieval, generation-citations - each with requirements in EARS
 form, a design document, and a task list. 48 requirements and 72 correctness properties
 drove every implementation decision.
 

@@ -54,7 +54,7 @@ Four hard constraints apply to the whole plan and are repeated in the tasks they
   (Requirements 1.7, 1.8, 4.4, 12.4, 13.2).
 
 Every property test uses Hypothesis, runs at least 100 generated examples, carries the tag comment
-`# Feature: week3-generation-citations, Property N: <property text>`, and implements exactly one design
+`# Feature: generation-citations, Property N: <property text>`, and implements exactly one design
 property per test function. Property 1 runs 200, as the design specifies.
 
 ## Tasks
@@ -67,12 +67,12 @@ property per test function. Property 1 runs 200, as the design specifies.
     - _Requirements: 16.3_
 
   - [ ] 1.2 Extend `.env.example` with the six Week 3 variables
-    - `ASKMYDOCS_CHAT_PROVIDER` (`openai`), `ASKMYDOCS_CONTEXT_BUDGET` (`12000`, range 1000–200000), `ASKMYDOCS_CHAT_MODEL` (`gpt-4o-mini`), `ASKMYDOCS_ANSWER_LOG` (`logs/answers.jsonl`), `ASKMYDOCS_EVALUATION_QUESTION_SET` (`question-sets/week3-questions.txt`), `ASKMYDOCS_EVALUATION_REPORT` (`reports/week3-evaluation.md`) — six variables, not eight, because the run file and the ratings file are derived paths rather than settings
+    - `ASKMYDOCS_CHAT_PROVIDER` (`openai`), `ASKMYDOCS_CONTEXT_BUDGET` (`12000`, range 1000–200000), `ASKMYDOCS_CHAT_MODEL` (`gpt-4o-mini`), `ASKMYDOCS_ANSWER_LOG` (`logs/answers.jsonl`), `ASKMYDOCS_EVALUATION_QUESTION_SET` (`question-sets/evaluation-questions.txt`), `ASKMYDOCS_EVALUATION_REPORT` (`reports/evaluation.md`) — six variables, not eight, because the run file and the ratings file are derived paths rather than settings
     - State that `OPENAI_API_KEY` is now required by a default install because the `Chat_Provider` defaults to `openai`, independently of `ASKMYDOCS_PROVIDER`, and that every combination of the two providers is permitted
     - _Requirements: 1.1, 1.7, 1.8_
 
   - [ ] 1.3 Extend `.gitignore` for the Week 3 artifacts
-    - Exclude `logs/answers.jsonl` (the `Answer_Log` holds verbatim note text), `reports/week3-evaluation-run.json`, and `reports/week3-evaluation-ratings.csv`; keep the Week 1 and Week 2 entries for `.env`, the personal note files of `sample-notes/` other than its README, the Chroma `Persist_Directory`, the `Retrieval_Log`, and `reports/relevance-review*.csv`
+    - Exclude `logs/answers.jsonl` (the `Answer_Log` holds verbatim note text), `reports/evaluation-run.json`, and `reports/evaluation-ratings.csv`; keep the Week 1 and Week 2 entries for `.env`, the personal note files of `sample-notes/` other than its README, the Chroma `Persist_Directory`, the `Retrieval_Log`, and `reports/relevance-review*.csv`
     - Keep `docs/example-answer.png` tracked, which is why the image lives outside `reports/`
     - _Requirements: 10.7, 16.2_
 
@@ -197,7 +197,7 @@ property per test function. Property 1 runs 200, as the design specifies.
 
 - [ ] 7. Mon–Tue — Grounding fixtures and the evaluation question set
 
-  - [ ] 7.1 Write the `Evaluation_Question_Set` at `question-sets/week3-questions.txt`
+  - [ ] 7.1 Write the `Evaluation_Question_Set` at `question-sets/evaluation-questions.txt`
     - UTF-8, one question per non-empty line, at least 10 distinct non-empty lines over the committed sample notes, unchanged in format from Week 2
     - Include at least one Positive_Grounding_Question whose answer appears in the notes and nowhere in the `System_Prompt`, and at least one Negative_Grounding_Question whose answer appears nowhere in the notes, so the refusal path is exercised and score mode's `RefusalPathMissingError` check passes
     - _Requirements: 5.1, 5.2, 5.3, 11.6_
@@ -329,7 +329,7 @@ property per test function. Property 1 runs 200, as the design specifies.
   - [ ] 15.1 Implement generate mode in `src/askmydocs/evaluation/answer_eval.py`
     - Load the question set through the unchanged Week 2 `evaluation/question_set.py`, reusing its de-duplication and `Question_Identifier`; raise `QuestionCountError` naming the count and the minimum of 10 **before the first question runs**, so no API spend happens on a run that cannot produce a valid report
     - Call `answer_question(..., source="evaluate")` once per distinct question in file order — the same function the `Ask_Script` calls, which is the whole mechanism behind Requirement 11.1 — so every evaluation question also lands in the `Answer_Log` and the Week 2 `Retrieval_Log`
-    - Write `reports/week3-evaluation-run.json` as the machine-owned artifact holding the `Configuration_Stamp`, the timestamp, and per question the identifier, text, outcome, every retrieved `Similarity_Score`, answer text, cited entries, `Prompt_Hash`, `Dropped_Chunk_Count`, and `Token_Usage`; write `reports/week3-evaluation-ratings.csv` with `question_id,question,quality_rating` and the rating column empty
+    - Write `reports/evaluation-run.json` as the machine-owned artifact holding the `Configuration_Stamp`, the timestamp, and per question the identifier, text, outcome, every retrieved `Similarity_Score`, answer text, cited entries, `Prompt_Hash`, `Dropped_Chunk_Count`, and `Token_Usage`; write `reports/evaluation-ratings.csv` with `question_id,question,quality_rating` and the rating column empty
     - Abort the whole run if one question fails, rather than leaving a partial run file whose mean would have an unknown denominator
     - _Requirements: 11.1, 11.2, 11.6_
 

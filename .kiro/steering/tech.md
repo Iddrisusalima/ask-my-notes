@@ -52,7 +52,7 @@ setting name, and `.env.example` plus the README are the source of truth for bot
 | Relevance threshold | `Relevance_Threshold` | `0.30` |
 | Retrieval log | `Retrieval_Log` | `logs/retrievals.jsonl` |
 | Source manifest | `Source_Manifest` | `.chroma/ingest-manifest.json` |
-| Question set | `Question_Set` | `question-sets/week2-questions.txt` |
+| Question set | `Question_Set` | `question-sets/retrieval-questions.txt` |
 
 ## Commands
 
