@@ -2,7 +2,7 @@
 
 Replace the two placeholders before posting:
 
-- `REPO_URL`  -> https://github.com/YOUR-USERNAME/ask-my-notes
+- `REPO_URL`  -> https://github.com/Iddrisusalima/ask-my-notes
 - `VIDEO_URL` -> the public link to your 30s-3min demo
 
 ## Short description (2-3 sentences)
@@ -14,8 +14,8 @@ Required in both the social post and the entry form.
 > and citation validation are all hand-written. It answers only from the chunks it
 > retrieves, cites the exact file and character range behind every claim, and refuses
 > outright when the notes do not cover the question instead of inventing an answer. I
-> built it in Kiro across three phase specs, with 72 correctness properties driving
-> property-based tests.
+> built it in Kiro across three phase specs, which state 72 correctness properties and
+> implement 19 of them as property-based tests at 200 generated cases each.
 
 ## Social post - X version
 
@@ -29,7 +29,7 @@ Required in both the social post and the entry form.
 > MCP server, and property-based tests that check chunks always reconstruct the original
 > text exactly.
 >
-> Code: REPO_URL
+> Code: https://github.com/Iddrisusalima/ask-my-notes
 > Demo: VIDEO_URL
 >
 > @kirodotdev #KiroUniversity #BuildWithKiro
@@ -44,18 +44,31 @@ Required in both the social post and the entry form.
 > Two things I care about in it. Every answer cites the exact source file and character
 > range it came from, so a claim can be checked against the original note. And when the
 > notes do not cover a question, it refuses - the closest chunk has to clear a relevance
-> threshold before the model is called at all. An assistant that always answers is
+> threshold before an answer is composed at all. An assistant that always answers is
 > useless, because you cannot tell the grounded answers from the invented ones.
 >
 > I built it in Kiro using spec-driven development: three phase specs with requirements,
 > designs, and task lists, steering files pinning the rules every task follows, hooks
 > automating the test runs, three custom agents with deliberately different permissions,
-> an MCP server, and property-based tests covering 72 stated correctness properties.
+> an MCP server, and property-based tests at 200 generated cases each covering 19 of the
+> 72 correctness properties the specs state.
 >
-> Code: REPO_URL
+> Code: https://github.com/Iddrisusalima/ask-my-notes
 > Demo: VIDEO_URL
 >
 > @kiro #KiroUniversity #BuildWithKiro
+
+## Worth saying: how answers are composed
+
+Useful in the post or the form if there is room.
+
+> Answers are extractive rather than abstractive: the tool composes them from the
+> highest-scoring retrieved sentences, ranked against the question by the same cosine
+> similarity that ranked the chunks. That needs no API key and it cannot hallucinate,
+> because every sentence is text from the notes, and each one carries the citation marker
+> of the chunk it came from, so miscitation is structurally impossible rather than merely
+> discouraged. An abstractive chat path is implemented behind a --chat flag for anyone
+> with a key.
 
 ## Entry form: how each lesson was incorporated
 
@@ -63,8 +76,9 @@ Paste this into the writeup field.
 
 **Lesson 1, Specs.** Three phase specs under `.kiro/specs/` - embeddings-chunking,
 vector-db-retrieval, generation-citations - each with requirements in EARS
-form, a design document, and a task list. 48 requirements and 72 correctness properties
-drove every implementation decision.
+form, a design document, and a task list. 48 requirements and 72 stated correctness
+properties drove every implementation decision; 19 of those properties are implemented as
+Hypothesis tests.
 
 **Lesson 2, Steering.** Five files in `.kiro/steering/`. product, tech, structure, and
 privacy-and-secrets apply always; testing is scoped to `tests/**` by fileMatch. They pin
@@ -101,9 +115,9 @@ config, and a retrieval reference.
 
 ## Final compliance pass
 
-- [ ] Repo is **public** and owned by you
-- [ ] Repo name `ask-my-notes`
-- [ ] `.kiro/` folder committed - 31 files
+- [x] Repo is **public** and owned by you
+- [x] Repo name `ask-my-notes`
+- [x] `.kiro/` folder committed - 31 files
 - [x] First commit after 21 Sept 09:00 PT, none before
 - [ ] GitHub account at least 3 months old
 - [ ] GitHub account matches the social account you post from
