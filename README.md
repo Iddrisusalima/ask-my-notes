@@ -17,8 +17,10 @@ cosine similarity, the chunker, and the in-memory vector store behind the interf
 Phase 2 swaps a persistent Chroma store into. 19 property-based tests pass, each running
 200 generated examples.
 
-Not yet built: document loaders, the embedder, the runnable scripts, and Phases 2 and 3
-(persistent storage, retrieval, generation, citations).
+Answers are **extractive** by default: composed from the retrieved sentences themselves,
+ranked against the question by the same cosine similarity that ranked the chunks. That needs
+no API key and cannot hallucinate, because every sentence is text from your notes. Pass
+`--chat` to use an abstractive chat model instead, which requires `OPENAI_API_KEY`.
 
 ## Setup
 

@@ -6,7 +6,7 @@ exists, so a refusal provably never reaches the chat endpoint.
 Usage:
     python scripts/09_ask.py "why does chunk size matter?"
     python scripts/09_ask.py "..." --top-k 3
-    python scripts/09_ask.py "..." --dry-run   # scripted model, no API key needed
+    python scripts/09_ask.py "..." --chat      # abstractive, needs OPENAI_API_KEY
 """
 
 from __future__ import annotations
@@ -31,6 +31,7 @@ from askmydocs.generation.generator import (
     FakeChatModel,
     OpenAIChatClient,
 )
+from askmydocs.generation.extractive import build_extractive_answer
 from askmydocs.generation.presenter import render_answer, render_refusal
 from askmydocs.generation.prompting import DEFAULT_CONTEXT_BUDGET, PromptBuilder
 from askmydocs.reporting import Reporter
@@ -46,23 +47,23 @@ DRY_RUN_ANSWER = (
 
 
 def parse_args(argv: list[str]) -> tuple[str, int | None, bool]:
-    dry_run = "--dry-run" in argv
-    argv = [a for a in argv if a != "--dry-run"]
+    use_chat = "--chat" in argv
+    argv = [a for a in argv if a != "--chat"]
     top_k: int | None = None
     if "--top-k" in argv:
         at = argv.index("--top-k")
         top_k = int(argv[at + 1])
         del argv[at : at + 2]
-    return " ".join(argv).strip(), top_k, dry_run
+    return " ".join(argv).strip(), top_k, use_chat
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
-    question, requested_k, dry_run = parse_args(argv)
+    question, requested_k, use_chat = parse_args(argv)
 
     if not question:
         print(
-            'Usage: python scripts/09_ask.py "your question" [--top-k N] [--dry-run]',
+            'Usage: python scripts/09_ask.py "your question" [--top-k N] [--chat]',
             file=sys.stderr,
         )
         return 2
@@ -109,23 +110,23 @@ def main(argv: list[str] | None = None) -> int:
         builder = PromptBuilder(DEFAULT_CONTEXT_BUDGET)
         prompt = builder.build(result)
 
-        if dry_run:
-            client = FakeChatModel(
-                replies=[
-                    ChatCompletion(
-                        content=DRY_RUN_ANSWER, prompt_tokens=420, completion_tokens=48
-                    )
-                ]
-            )
-            chat_model = "dry-run-scripted-model"
-        else:
+        if use_chat:
+            # Abstractive: a chat model paraphrases the retrieved context.
+            # Requires an API key, so it is opt-in rather than the default.
             client = OpenAIChatClient(
                 configuration.api_key, configuration.request_timeout_seconds
             )
-            chat_model = "gpt-4o-mini"
-
-        generator = AnswerGenerator(client, configuration, chat_model)
-        generated = generator.generate(prompt)
+            generated = AnswerGenerator(
+                client, configuration, "gpt-4o-mini"
+            ).generate(prompt)
+        else:
+            # Extractive: the answer is composed from the retrieved sentences
+            # themselves, ranked against the question by the same cosine
+            # similarity used to rank the chunks. No API key, and grounded by
+            # construction because every sentence is text from the notes.
+            generated = build_extractive_answer(
+                question, prompt, result, embedder
+            )
 
         report = CitationValidator().validate(generated.text, prompt)
         sources = build_source_list(report, prompt)
