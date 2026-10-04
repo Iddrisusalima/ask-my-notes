@@ -12,12 +12,12 @@ you can clone this repository and run it immediately.
 
 ## Status
 
-Week 1 of three is partially built. The pure layers are done and tested: configuration,
+Phase 1 of three is partially built. The pure layers are done and tested: configuration,
 cosine similarity, the chunker, and the in-memory vector store behind the interface that
-Week 2 swaps a persistent Chroma store into. 19 property-based tests pass, each running
+Phase 2 swaps a persistent Chroma store into. 19 property-based tests pass, each running
 200 generated examples.
 
-Not yet built: document loaders, the embedder, the runnable scripts, and Weeks 2 and 3
+Not yet built: document loaders, the embedder, the runnable scripts, and Phases 2 and 3
 (persistent storage, retrieval, generation, citations).
 
 ## Setup
@@ -77,9 +77,9 @@ for the full list with ranges. The ones you are most likely to change:
 
 ## How it is built
 
-Specifications live in `.kiro/specs/`, one per week, each with requirements, a design, and
+Specifications live in `.kiro/specs/`, one per phase, each with requirements, a design, and
 a task list. `.kiro/steering/` holds the rules every task follows, including the frozen
-modules Weeks 2 and 3 must not edit. `.kiro/hooks/`, `.kiro/agents/`, and `.kiro/skills/`
+modules Phases 2 and 3 must not edit. `.kiro/hooks/`, `.kiro/agents/`, and `.kiro/skills/`
 hold the automation, the scoped agents, and the workflow guides.
 
 ## Licence

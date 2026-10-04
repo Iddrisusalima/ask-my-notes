@@ -2,24 +2,24 @@
 
 ## Introduction
 
-Week 2 (Sep 21–27) of the "Ask My Docs" learning project replaces the Week 1 in-process list with a real, local, free vector database and builds retrieval on top of it. Week 1 delivered Configuration, Embedder (OpenAI or Sentence Transformers) with batching and retry, Similarity_Calculator, Document_Loader with PDF_Loader and Markdown_Loader, Chunker, Vector_Store_Interface, In_Memory_Store, and four scripts. Week 2 adds a second implementation of that same Vector_Store_Interface, Chroma_Store, backed by a persistent on-disk Chroma collection.
+Phase 2 (Sep 21–27) of the "Ask My Docs" learning project replaces the Phase 1 in-process list with a real, local, free vector database and builds retrieval on top of it. Phase 1 delivered Configuration, Embedder (OpenAI or Sentence Transformers) with batching and retry, Similarity_Calculator, Document_Loader with PDF_Loader and Markdown_Loader, Chunker, Vector_Store_Interface, In_Memory_Store, and four scripts. Phase 2 adds a second implementation of that same Vector_Store_Interface, Chroma_Store, backed by a persistent on-disk Chroma collection.
 
-Chroma is the required database for Week 2: it installs as a Python package, needs no API key, no server process, and no account, and its persistent client writes a collection to a local directory. LanceDB is the documented alternative considered, and Pinecone is the documented hosted comparison; neither is installed.
+Chroma is the required database for Phase 2: it installs as a Python package, needs no API key, no server process, and no account, and its persistent client writes a collection to a local directory. LanceDB is the documented alternative considered, and Pinecone is the documented hosted comparison; neither is installed.
 
-Every Embedding_Vector stored in or queried against Chroma is produced by the Week 1 Embedder. Chroma is never asked to embed text, so the Embedder remains the single embedding path and the Week 1 loader, chunker, and embedder modules are not modified.
+Every Embedding_Vector stored in or queried against Chroma is produced by the Phase 1 Embedder. Chroma is never asked to embed text, so the Embedder remains the single embedding path and the Phase 1 loader, chunker, and embedder modules are not modified.
 
-The Week 2 deliverables are: a persistent Chroma collection holding every Chunk of the Sample_Notes_Folder; an ingest run that is idempotent and incremental, driven by a per-file content hash, so unchanged files are skipped, changed files have their old Chunks replaced, and deleted files have their Chunks removed; a Retriever that turns a question string into the top-K most similar Chunks with scores and source metadata; a no-relevant-context path that reports the absence of a match instead of returning noise when the best Similarity_Score falls below a configured threshold; a command-line query script; an append-only machine-readable retrieval log; a Top-K tuning experiment at K values 3, 5, and 10; a manual relevance review that yields precision@K over hand-labelled results; a written comparison of Chroma against at least one alternative plus an explanation of how the database performs similarity search; and a conformance test suite that runs the same behavioural tests against both In_Memory_Store and Chroma_Store.
+The Phase 2 deliverables are: a persistent Chroma collection holding every Chunk of the Sample_Notes_Folder; an ingest run that is idempotent and incremental, driven by a per-file content hash, so unchanged files are skipped, changed files have their old Chunks replaced, and deleted files have their Chunks removed; a Retriever that turns a question string into the top-K most similar Chunks with scores and source metadata; a no-relevant-context path that reports the absence of a match instead of returning noise when the best Similarity_Score falls below a configured threshold; a command-line query script; an append-only machine-readable retrieval log; a Top-K tuning experiment at K values 3, 5, and 10; a manual relevance review that yields precision@K over hand-labelled results; a written comparison of Chroma against at least one alternative plus an explanation of how the database performs similarity search; and a conformance test suite that runs the same behavioural tests against both In_Memory_Store and Chroma_Store.
 
-Out of scope for Week 2: prompt construction, LLM answer generation, citations inside generated answers, and any user interface. Those belong to Week 3, which consumes the Retriever output and uses the no-relevant-context signal to refuse to answer.
+Out of scope for Phase 2: prompt construction, LLM answer generation, citations inside generated answers, and any user interface. Those belong to Phase 3, which consumes the Retriever output and uses the no-relevant-context signal to refuse to answer.
 
 ## Glossary
 
-Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration, Embedding_Provider, Embedder, Embedding_Vector, Embedding_Dimensionality, Similarity_Calculator, Cosine_Similarity, Sample_Notes_Folder, Document_Loader, PDF_Loader, Markdown_Loader, Document, Chunker, Chunk, Chunk_Size, Chunk_Overlap, Max_Input_Length, Max_Batch_Size, Max_Chunks_Per_Run, Vector_Store_Interface, In_Memory_Store, Learning_Notes — keep their Week 1 meanings and are used unchanged here. Week 2 adds the following terms.
+Terms defined in the Phase 1 requirements document — Ask_My_Docs, Configuration, Embedding_Provider, Embedder, Embedding_Vector, Embedding_Dimensionality, Similarity_Calculator, Cosine_Similarity, Sample_Notes_Folder, Document_Loader, PDF_Loader, Markdown_Loader, Document, Chunker, Chunk, Chunk_Size, Chunk_Overlap, Max_Input_Length, Max_Batch_Size, Max_Chunks_Per_Run, Vector_Store_Interface, In_Memory_Store, Learning_Notes — keep their Phase 1 meanings and are used unchanged here. Phase 2 adds the following terms.
 
 - **Vector_Database**: A storage system that holds Embedding_Vectors together with identifiers, text, and metadata, and that answers nearest-neighbour queries over those Embedding_Vectors.
 - **Chroma**: The selected local Vector_Database, used through its Python package and its persistent client, requiring no API key, no account, and no separate server process.
-- **LanceDB**: The alternative local Vector_Database considered and documented in Week 2 but not installed.
-- **Pinecone**: The hosted Vector_Database considered and documented in Week 2 but not installed.
+- **LanceDB**: The alternative local Vector_Database considered and documented in Phase 2 but not installed.
+- **Pinecone**: The hosted Vector_Database considered and documented in Phase 2 but not installed.
 - **HNSW**: Hierarchical Navigable Small World, the multi-layer proximity-graph index structure Chroma uses to answer approximate nearest-neighbour queries.
 - **Exact_Search_Limit**: The stored item count of 1000 at or below which a store query is required to return exactly the K Stored_Items with the highest Similarity_Score, and above which the Recall_Floor applies instead because the HNSW index answers the query approximately.
 - **Recall_Floor**: The minimum proportion, 95 percent rounded down, of the SearchHit values a store query returns that are required to be among the K Stored_Items with the highest Similarity_Score computed by exhaustive comparison, applying while the stored item count exceeds the Exact_Search_Limit.
@@ -27,11 +27,11 @@ Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration
 - **Chroma_Collection**: The single named Chroma collection that holds every stored Chunk of the Sample_Notes_Folder.
 - **Collection_Name**: The configured name of the Chroma_Collection. Default `ask_my_docs`.
 - **Persist_Directory**: The configured local filesystem directory in which Chroma writes the Chroma_Collection so that the collection survives process exit. Default `.chroma`.
-- **Distance_Metric**: The configured Chroma distance function recorded on the Chroma_Collection at creation time. Week 2 supports the single value `cosine`.
+- **Distance_Metric**: The configured Chroma distance function recorded on the Chroma_Collection at creation time. Phase 2 supports the single value `cosine`.
 - **Chroma_Distance**: The non-negative number Chroma returns for a query result under the configured Distance_Metric.
 - **Similarity_Score**: The number in the closed interval [-1, 1] that Ask_My_Docs derives from a Chroma_Distance, defined so that a larger Similarity_Score means greater semantic closeness and so that the value equals the Cosine_Similarity of the query Embedding_Vector and the stored Embedding_Vector.
 - **Collection_Fingerprint**: The record written into the Chroma_Collection metadata at creation time, holding the Distance_Metric, the Embedding_Provider identifier, the model name, and the Embedding_Dimensionality.
-- **Store_Admin_Interface**: The additive Week 2 contract, implemented by both In_Memory_Store and Chroma_Store, defining the operations needed for incremental ingest: upsert a batch, fetch stored items by chunk id, delete by chunk id, delete by source file path, and reset the store to empty.
+- **Store_Admin_Interface**: The additive Phase 2 contract, implemented by both In_Memory_Store and Chroma_Store, defining the operations needed for incremental ingest: upsert a batch, fetch stored items by chunk id, delete by chunk id, delete by source file path, and reset the store to empty.
 - **SearchHit**: One result of a store query, carrying the returned Chunk, the Similarity_Score of that Chunk against the query Embedding_Vector, and the insertion index of that Chunk in the store.
 - **Stored_Item**: One chunk id together with the Chunk text, the Chunk metadata, and the Embedding_Vector held under that chunk id in a store.
 - **Collection_State**: The set of Stored_Items in a store, compared by chunk id, Chunk text, Chunk metadata excluding insertion index, and Embedding_Vector. Two stores have equal Collection_State when the two sets are equal under those fields.
@@ -50,8 +50,8 @@ Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration
 - **Query_Script**: The runnable command-line script that accepts a question string and an optional value of Top_K and prints the Retrieval_Result.
 - **Retrieval_Log**: The append-only machine-readable file to which one Retrieval_Log_Record is written for every Retriever invocation. Default path `logs/retrievals.jsonl`.
 - **Retrieval_Log_Record**: One JSON object, serialized on a single line, recording one Retriever invocation.
-- **Log_Schema_Version**: The version value held in every Retrieval_Log_Record that identifies the field set of that Retrieval_Log_Record, so that a reader can tell which fields to expect. Week 2 writes the single value `1`.
-- **Question_Set**: The UTF-8 text file holding the Week 2 evaluation questions, one question per non-empty line. Default path `question-sets/retrieval-questions.txt`. Expected question count 5 to 10.
+- **Log_Schema_Version**: The version value held in every Retrieval_Log_Record that identifies the field set of that Retrieval_Log_Record, so that a reader can tell which fields to expect. Phase 2 writes the single value `1`.
+- **Question_Set**: The UTF-8 text file holding the Phase 2 evaluation questions, one question per non-empty line. Default path `question-sets/retrieval-questions.txt`. Expected question count 5 to 10.
 - **Question_Identifier**: The one-based position of a distinct non-empty question line of the Question_Set, counted in Question_Set file order over the distinct non-empty lines only, used to identify that question in the Top_K_Report, the Relevance_Review_File, and the Precision_Report.
 - **Top_K_Experiment_Script**: The runnable script that runs the whole Question_Set at Top_K values 3, 5, and 10 and writes the Top_K_Report.
 - **Top_K_Report**: The markdown file holding the per-question and aggregate Top-K statistics and the written tradeoff observation. Default path `reports/topk-experiment.md`.
@@ -65,24 +65,24 @@ Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration
 
 ## Requirements
 
-### Requirement 1: Week 2 Configuration Extension
+### Requirement 1: Phase 2 Configuration Extension
 
-**User Story:** As a learner, I want the vector database, retrieval, and logging settings supplied through environment variables like every Week 1 setting, so that I can retune retrieval without editing code.
+**User Story:** As a learner, I want the vector database, retrieval, and logging settings supplied through environment variables like every Phase 1 setting, so that I can retune retrieval without editing code.
 
 #### Acceptance Criteria
 
-1. THE Configuration SHALL read the vector store selection, the Persist_Directory path, the Collection_Name, the Distance_Metric, the default Top_K, the Relevance_Threshold, the Retrieval_Log path, the Source_Manifest path, and the Question_Set path from environment variables, in addition to every setting named in Week 1 Requirement 1.
+1. THE Configuration SHALL read the vector store selection, the Persist_Directory path, the Collection_Name, the Distance_Metric, the default Top_K, the Relevance_Threshold, the Retrieval_Log path, the Source_Manifest path, and the Question_Set path from environment variables, in addition to every setting named in Phase 1 Requirement 1.
 2. IF an environment variable named in criterion 1 is absent or contains only whitespace, THEN THE Configuration SHALL apply that setting's documented default value: vector store selection `chroma`, Persist_Directory `.chroma`, Collection_Name `ask_my_docs`, Distance_Metric `cosine`, Top_K 5, Relevance_Threshold 0.30, Retrieval_Log path `logs/retrievals.jsonl`, Source_Manifest path `.chroma/ingest-manifest.json`, and Question_Set path `question-sets/retrieval-questions.txt`.
 3. THE Configuration SHALL match the vector store selection value and the Distance_Metric value against the supported values case-insensitively and after trimming leading and trailing whitespace.
 4. IF the vector store selection value, after trimming and lower-casing, equals neither `memory` nor `chroma`, THEN THE Configuration SHALL terminate with a non-zero exit status and an error message listing the two supported values and showing the rejected value.
-5. IF the Distance_Metric value, after trimming and lower-casing, does not equal `cosine`, THEN THE Configuration SHALL terminate with a non-zero exit status and an error message stating that Week 2 supports the single Distance_Metric value `cosine` and showing the rejected value.
+5. IF the Distance_Metric value, after trimming and lower-casing, does not equal `cosine`, THEN THE Configuration SHALL terminate with a non-zero exit status and an error message stating that Phase 2 supports the single Distance_Metric value `cosine` and showing the rejected value.
 6. IF the configured Top_K value cannot be parsed as an integer, or parses as an integer less than 1 or greater than 100, THEN THE Configuration SHALL terminate with a non-zero exit status and an error message naming the environment variable, showing the rejected value, and stating the permitted range of 1 to 100.
 7. IF the configured Relevance_Threshold value cannot be parsed as a decimal number, or parses as a number less than -1.0 or greater than 1.0, THEN THE Configuration SHALL terminate with a non-zero exit status and an error message naming the environment variable, showing the rejected value, and stating the permitted range of -1.0 to 1.0.
 8. IF the Collection_Name, after trimming, is shorter than 3 characters, is longer than 63 characters, has a first or last character that is not an ASCII letter or ASCII digit, or contains any character other than an ASCII letter, an ASCII digit, a hyphen, or an underscore, THEN THE Configuration SHALL terminate with a non-zero exit status and an error message naming the environment variable, showing the rejected value, and stating the permitted character set, the first-and-last-character rule, and the length range of 3 to 63 characters.
 9. THE Configuration SHALL resolve the Persist_Directory path, the Retrieval_Log path, the Source_Manifest path, and the Question_Set path relative to the repository root when the configured value is not an absolute path.
 10. THE Ask_My_Docs repository SHALL list every environment variable named in criterion 1, with its default value and permitted range, in the example environment file and in the README.
 11. THE Ask_My_Docs repository SHALL exclude the Persist_Directory, the Source_Manifest, the Retrieval_Log, and the Relevance_Review_File from version control.
-12. WHERE the selected Embedding_Provider is a Sentence Transformers model, THE Ask_My_Docs SHALL complete every Week 2 operation without reading the API key environment variable and without issuing any network request.
+12. WHERE the selected Embedding_Provider is a Sentence Transformers model, THE Ask_My_Docs SHALL complete every Phase 2 operation without reading the API key environment variable and without issuing any network request.
 
 ### Requirement 2: Local Persistent Vector Database Selection
 
@@ -107,7 +107,7 @@ Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration
 
 #### Acceptance Criteria
 
-1. THE Chroma_Store SHALL implement the Vector_Store_Interface operations defined in Week 1 Requirement 10.1: add a batch of Chunks with their Embedding_Vectors, report the stored item count, and return the K stored Chunks with the highest Similarity_Score to a supplied query Embedding_Vector.
+1. THE Chroma_Store SHALL implement the Vector_Store_Interface operations defined in Phase 1 Requirement 10.1: add a batch of Chunks with their Embedding_Vectors, report the stored item count, and return the K stored Chunks with the highest Similarity_Score to a supplied query Embedding_Vector.
 2. WHEN the Chroma_Store adds a batch of Chunks, THE Chroma_Store SHALL supply to Chroma, for every Chunk in the batch, the chunk id produced by the Chunk, the Chunk text as the stored document, the flat metadata mapping produced by the Chunk, and the Embedding_Vector computed by the Embedder.
 3. WHEN the Chroma_Store creates or opens the Chroma_Collection, THE Chroma_Store SHALL configure the Chroma_Collection with no Chroma embedding function and SHALL supply an Embedding_Vector for every add, upsert, and query operation.
 4. WHEN the Chroma_Store adds a batch of Chunks, THE Chroma_Store SHALL store, in the metadata of every added Stored_Item, an insertion index held as an integer metadata value that is greater than the insertion index of every Stored_Item already held in the Chroma_Collection.
@@ -130,7 +130,7 @@ Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration
 
 ### Requirement 4: Explicit Distance Metric and Similarity Score Conversion
 
-**User Story:** As a learner, I want the distance metric named explicitly and the returned distance converted into the same cosine similarity number I computed by hand in Week 1, so that scores from Chroma and scores from my own code mean the same thing.
+**User Story:** As a learner, I want the distance metric named explicitly and the returned distance converted into the same cosine similarity number I computed by hand in Phase 1, so that scores from Chroma and scores from my own code mean the same thing.
 
 #### Acceptance Criteria
 
@@ -164,7 +164,7 @@ Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration
 #### Acceptance Criteria
 
 1. THE Store_Conformance_Suite SHALL execute every test case once against In_Memory_Store and once against Chroma_Store, using the same test code for both stores.
-2. THE Store_Conformance_Suite SHALL contain at least one test case for each acceptance criterion of Week 1 Requirement 10 and for each acceptance criterion of Requirement 3 of this document that states store behaviour.
+2. THE Store_Conformance_Suite SHALL contain at least one test case for each acceptance criterion of Phase 1 Requirement 10 and for each acceptance criterion of Requirement 3 of this document that states store behaviour.
 3. FOR ALL sequences of at least 1 and at most 50 Chunks with Embedding_Vectors of equal length, Euclidean norm in the closed interval [1e-3, 1e4], and every element of absolute value at most 1e3, added in the same order to an empty In_Memory_Store and an empty Chroma_Store, and FOR ALL query Embedding_Vectors satisfying those same bounds and all integer values of K from 1 to 50, the sequence of chunk ids the Chroma_Store returns SHALL equal the sequence of chunk ids the In_Memory_Store returns, except that a position where the two stores return different chunk ids is permitted when the Similarity_Scores of the two returned Stored_Items differ by at most 1e-5.
 4. FOR ALL sequences described in criterion 3, the Similarity_Score the Chroma_Store returns at each position SHALL equal the Cosine_Similarity the In_Memory_Store returns at that position within an absolute tolerance of 1e-5.
 5. FOR ALL Retrieval_Results and all query Embedding_Vectors, the sequence of Similarity_Scores returned by either store SHALL be monotonically non-increasing from the first position to the last position.
@@ -229,11 +229,11 @@ Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration
 4. WHEN the Ingest_Script is run and the Sample_Notes_Folder contains no supported files and the Source_Manifest holds no entry, THE Ingest_Script SHALL print counts of 0 for every value named in criterion 1, SHALL issue no Embedder call, and SHALL exit with a success status.
 5. WHEN the Ingest_Script is run a second time with unchanged source file bytes and unchanged Configuration, THE Ingest_Script SHALL print an Unchanged_Sources count equal to the count of discovered supported files whose loaded Document text length is greater than 0, a New_Sources count of 0, a Changed_Sources count of 0, a Chunks upserted count of 0, and a batch Embedder call count of 0.
 6. WHEN any Ingest_Script output, warning, or error message is produced, THE Ingest_Script SHALL exclude the API key value in whole and in part and SHALL substitute the fixed redaction marker wherever the API key would otherwise appear.
-7. WHEN the Ingest_Script loads source files, THE Ingest_Script SHALL apply the Week 1 per-file isolation behaviour for unopenable, unparsable, encrypted, oversize, and whitespace-only source files, SHALL exclude every such source file from the Chroma_Collection and from the Source_Manifest, and SHALL continue processing the remaining source files.
+7. WHEN the Ingest_Script loads source files, THE Ingest_Script SHALL apply the Phase 1 per-file isolation behaviour for unopenable, unparsable, encrypted, oversize, and whitespace-only source files, SHALL exclude every such source file from the Chroma_Collection and from the Source_Manifest, and SHALL continue processing the remaining source files.
 
 ### Requirement 10: Retriever Top-K Query
 
-**User Story:** As a learner, I want one function that turns a question into the most similar chunks with their scores and sources, so that Week 3 has something to build an answer on.
+**User Story:** As a learner, I want one function that turns a question into the most similar chunks with their scores and sources, so that Phase 3 has something to build an answer on.
 
 #### Acceptance Criteria
 
@@ -252,7 +252,7 @@ Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration
 
 ### Requirement 11: No-Relevant-Context Path
 
-**User Story:** As a learner, I want retrieval to say plainly that nothing relevant was found when every score is low, so that Week 3 can refuse to answer instead of quoting noise.
+**User Story:** As a learner, I want retrieval to say plainly that nothing relevant was found when every score is low, so that Phase 3 can refuse to answer instead of quoting noise.
 
 #### Acceptance Criteria
 
@@ -325,7 +325,7 @@ Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration
 3. WHEN the Top_K_Experiment_Script is run, THE Top_K_Experiment_Script SHALL write to the Top_K_Report, for every value of Top_K in the ordered list 3, 5, 10, the mean across the Question_Set of the highest Similarity_Score, the mean across the Question_Set of the mean Similarity_Score, and the mean across the Question_Set of the count of returned SearchHit values below the Relevance_Threshold.
 4. WHEN the Top_K_Experiment_Script is run, THE Top_K_Experiment_Script SHALL write to the Top_K_Report, for every question in the Question_Set, the count of distinct source file paths appearing in the Retrieval_Result at each value of Top_K.
 5. WHEN the Top_K_Experiment_Script completes, THE Top_K_Experiment_Script SHALL write the new Top_K_Report content to a temporary file in the Top_K_Report's directory and SHALL then replace the Top_K_Report file with that temporary file, so that an interrupted run leaves the previous Top_K_Report content intact.
-6. THE Top_K_Report SHALL contain a written section of at least 100 words stating the observed tradeoff between the additional context obtained at a larger value of Top_K and the additional below-threshold Chunks obtained at that same value, and naming the value of Top_K the learner selected for Week 3 with the reason.
+6. THE Top_K_Report SHALL contain a written section of at least 100 words stating the observed tradeoff between the additional context obtained at a larger value of Top_K and the additional below-threshold Chunks obtained at that same value, and naming the value of Top_K the learner selected for Phase 3 with the reason.
 7. FOR ALL questions in the Question_Set, WHILE the stored item count of the Chroma_Collection is at most 1000, the Retrieval_Result obtained at a value of Top_K of 3 SHALL equal the first 3 SearchHit values of the Retrieval_Result obtained at a value of Top_K of 10, except at a position where the Similarity_Scores of the two compared SearchHit values differ by at most 1e-5.
 8. IF the Question_Set file is absent, cannot be opened, cannot be decoded as UTF-8, or holds fewer than 1 non-empty line, THEN THE Top_K_Experiment_Script SHALL terminate with a non-zero exit status and an error message naming the resolved absolute Question_Set path, the failure reason, and the expected format of one question per non-empty line, and SHALL leave any existing Top_K_Report unchanged.
 9. IF the Question_Set holds fewer than 5 or more than 10 non-empty lines, THEN THE Top_K_Experiment_Script SHALL emit a warning stating the discovered question count and the recommended range of 5 to 10 questions, and SHALL continue processing every question.
@@ -362,40 +362,40 @@ Terms defined in the Week 1 requirements document — Ask_My_Docs, Configuration
 1. THE Comparison_Note SHALL compare Chroma against at least one of LanceDB and Pinecone across the dimensions local versus hosted deployment, monetary cost, persistence model, index type, metadata filtering support, and operational effort.
 2. THE Comparison_Note SHALL state, for every compared Vector_Database, whether that Vector_Database runs on the learner's machine without an account and whether that Vector_Database requires an API key.
 3. THE Comparison_Note SHALL state, for every compared Vector_Database, the index type used for approximate nearest-neighbour search, and SHALL name HNSW where HNSW applies.
-4. THE Comparison_Note SHALL state, for every compared Vector_Database, how metadata filtering is expressed and which of the Chunk metadata fields produced in Week 1 can be filtered on.
+4. THE Comparison_Note SHALL state, for every compared Vector_Database, how metadata filtering is expressed and which of the Chunk metadata fields produced in Phase 1 can be filtered on.
 5. THE Comparison_Note SHALL contain a section of at least 150 words explaining how a Vector_Database performs similarity search, addressing the embedding space in which Chunks and questions are placed, the role of the Distance_Metric, the behaviour of an HNSW proximity graph as an approximate nearest-neighbour index, and the tradeoff between query latency and recall that approximate search introduces.
-6. THE Comparison_Note SHALL state the selected Vector_Database for Week 2, the reason for the selection, and the condition under which the learner would move to a hosted Vector_Database.
+6. THE Comparison_Note SHALL state the selected Vector_Database for Phase 2, the reason for the selection, and the condition under which the learner would move to a hosted Vector_Database.
 7. THE Comparison_Note SHALL state the Distance_Metric configured on the Chroma_Collection and the formula that converts a Chroma_Distance into a Similarity_Score.
 8. THE Ask_My_Docs repository SHALL hold the Comparison_Note as a markdown file under version control at a path stated in the README.
 
-### Requirement 18: Week 1 Component Isolation
+### Requirement 18: Phase 1 Component Isolation
 
-**User Story:** As a learner, I want the database swap to touch only the storage layer, so that the interface I designed in Week 1 proves it was a real seam.
+**User Story:** As a learner, I want the database swap to touch only the storage layer, so that the interface I designed in Phase 1 proves it was a real seam.
 
 #### Acceptance Criteria
 
-1. THE Ask_My_Docs SHALL implement the Chroma_Store without changing the parameters or return types of the Week 1 Chunker, Embedder, Document_Loader, PDF_Loader, Markdown_Loader, or Similarity_Calculator interfaces.
+1. THE Ask_My_Docs SHALL implement the Chroma_Store without changing the parameters or return types of the Phase 1 Chunker, Embedder, Document_Loader, PDF_Loader, Markdown_Loader, or Similarity_Calculator interfaces.
 2. THE Chunker, Embedder, Document_Loader, and Similarity_Calculator modules SHALL import no Chroma symbol and no Chroma_Store symbol.
 3. THE Chroma_Store module SHALL be the only Ask_My_Docs module that imports the Chroma client package.
-4. THE Vector_Store_Interface SHALL retain the three operations defined in Week 1 Requirement 10.1 with unchanged names and unchanged parameter and return types, and the Store_Admin_Interface SHALL be defined as a separate additive contract.
+4. THE Vector_Store_Interface SHALL retain the three operations defined in Phase 1 Requirement 10.1 with unchanged names and unchanged parameter and return types, and the Store_Admin_Interface SHALL be defined as a separate additive contract.
 5. WHEN the store factory receives a Configuration whose vector store selection is `chroma`, THE store factory SHALL return a Chroma_Store, and WHEN the store factory receives a Configuration whose vector store selection is `memory`, THE store factory SHALL return an In_Memory_Store.
-6. WHEN the Week 1 Pipeline_Script is run under any Week 2 Configuration, THE Pipeline_Script SHALL populate an In_Memory_Store and SHALL produce the output defined by Week 1 Requirement 11.
+6. WHEN the Phase 1 Pipeline_Script is run under any Phase 2 Configuration, THE Pipeline_Script SHALL populate an In_Memory_Store and SHALL produce the output defined by Phase 1 Requirement 11.
 7. IF the import graph of the Ask_My_Docs modules shows a Chroma symbol or a Chroma_Store symbol imported by the Chunker, Embedder, Document_Loader, or Similarity_Calculator module, or shows the Chroma client package imported by any module other than the Chroma_Store module, THEN THE Ask_My_Docs test suite SHALL fail with a message naming every offending module and every offending imported symbol.
-8. WHEN the Ingest_Script produces Chunks, THE Ingest_Script SHALL use the chunk id and the flat metadata mapping already defined by the Week 1 Chunk without adding any field to the Chunk model other than fields derived from existing Chunk fields.
-9. THE Ask_My_Docs test suite SHALL compare the current content of every Week 1 module named in criterion 1 against that module's content at the recorded Week 1 completion revision of version control, and SHALL fail with a message naming every module whose content differs.
-10. WHEN the Ask_My_Docs test suite is run, THE test suite SHALL execute every Week 1 test without modification to that test's code and SHALL report a pass result for every one of those tests.
+8. WHEN the Ingest_Script produces Chunks, THE Ingest_Script SHALL use the chunk id and the flat metadata mapping already defined by the Phase 1 Chunk without adding any field to the Chunk model other than fields derived from existing Chunk fields.
+9. THE Ask_My_Docs test suite SHALL compare the current content of every Phase 1 module named in criterion 1 against that module's content at the recorded Phase 1 completion revision of version control, and SHALL fail with a message naming every module whose content differs.
+10. WHEN the Ask_My_Docs test suite is run, THE test suite SHALL execute every Phase 1 test without modification to that test's code and SHALL report a pass result for every one of those tests.
 
-### Requirement 19: Week 2 Test Suite and Reproducibility
+### Requirement 19: Phase 2 Test Suite and Reproducibility
 
-**User Story:** As a learner, I want the Week 2 properties checked automatically and offline, so that the store swap, the ingest logic, and the retrieval ordering stay correct as I keep building.
+**User Story:** As a learner, I want the Phase 2 properties checked automatically and offline, so that the store swap, the ingest logic, and the retrieval ordering stay correct as I keep building.
 
 #### Acceptance Criteria
 
-1. THE Ask_My_Docs dependency manifest SHALL pin an exact version for the Chroma package and for every other direct dependency added in Week 2, and SHALL exclude every dependency that supplies pre-built retrieval, re-ranking, or prompt-orchestration pipelines.
+1. THE Ask_My_Docs dependency manifest SHALL pin an exact version for the Chroma package and for every other direct dependency added in Phase 2, and SHALL exclude every dependency that supplies pre-built retrieval, re-ranking, or prompt-orchestration pipelines.
 2. THE Ask_My_Docs test suite SHALL contain at least one test for each acceptance criterion of Requirements 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, and 18 of this document.
 3. THE Ask_My_Docs test suite SHALL verify each FOR ALL property stated in this document using property-based tests that generate at least 100 distinct randomly generated inputs per property, and SHALL report, for every failing property, the seed value and the generated input that produced the failure so that the failing run can be repeated.
 4. THE Ask_My_Docs test suite SHALL contain a property-based test for each of the following properties: differential agreement of Chroma_Store and In_Memory_Store on top-K chunk ids and scores; monotonically non-increasing Similarity_Score ordering; prefix consistency of results across values of Top_K; ingest idempotence; equality of incremental ingest and full rebuild Collection_State; round-trip fidelity of Chunk text, Chunk metadata, and Embedding_Vector; agreement of the Chroma_Distance to Similarity_Score conversion with the Similarity_Calculator; retrieval of a stored Chunk's own Embedding_Vector returning that Chunk first; K clamping when Top_K exceeds the stored item count; equality of the stored item count and the sum of the Source_Manifest Chunk counts; and the No_Relevant_Context outcome holding exactly when the highest Similarity_Score is below the Relevance_Threshold.
-5. WHERE a test requires Embedding_Vectors, THE test suite SHALL use the Week 1 substitute Embedder that returns vectors of a fixed Embedding_Dimensionality, returns identical vectors for identical input text on every invocation, and issues no request to a remote Embedding_Provider.
+5. WHERE a test requires Embedding_Vectors, THE test suite SHALL use the Phase 1 substitute Embedder that returns vectors of a fixed Embedding_Dimensionality, returns identical vectors for identical input text on every invocation, and issues no request to a remote Embedding_Provider.
 6. WHERE a test requires a Chroma_Collection, THE test SHALL use a Persist_Directory created for that test and removed after that test, and SHALL leave the repository Persist_Directory unchanged.
 7. WHEN the test suite is run with no API key present in the environment, THE test suite SHALL complete with a success status and SHALL issue no network request.
 8. WHEN the test suite is run on a supported Python version, THE test suite SHALL complete within 300 seconds.

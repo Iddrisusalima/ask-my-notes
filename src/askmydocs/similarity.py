@@ -1,7 +1,7 @@
 ﻿"""Cosine similarity, written by hand.
 
 This is the numeric core the whole project rests on: the store ranks by it, the
-relevance threshold is denominated in it, and Week 2 checks the vector
+relevance threshold is denominated in it, and Phase 2 checks the vector
 database's own distances against it.
 
 Validation order is fixed and tested, because the requirements pin it

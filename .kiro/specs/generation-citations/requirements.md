@@ -2,15 +2,15 @@
 
 ## Introduction
 
-Week 3 (Sep 28 â€“ Oct 4) of the "Ask My Docs" learning project turns retrieval into answers. Week 1 delivered Configuration, the Embedder, chunking, loading, and the store interface. Week 2 delivered the persistent Chroma_Store, incremental ingest, and the Retriever, which returns a Retrieval_Result whose outcome is exactly one of RELEVANT_CONTEXT, NO_RELEVANT_CONTEXT, or EMPTY_COLLECTION, together with an ordered sequence of SearchHit values each carrying a Chunk (source path, ordinal index, start and end character offsets) and a Similarity_Score.
+Phase 3 (Sep 28 â€“ Oct 4) of the "Ask My Docs" learning project turns retrieval into answers. Phase 1 delivered Configuration, the Embedder, chunking, loading, and the store interface. Phase 2 delivered the persistent Chroma_Store, incremental ingest, and the Retriever, which returns a Retrieval_Result whose outcome is exactly one of RELEVANT_CONTEXT, NO_RELEVANT_CONTEXT, or EMPTY_COLLECTION, together with an ordered sequence of SearchHit values each carrying a Chunk (source path, ordinal index, start and end character offsets) and a Similarity_Score.
 
-Week 3 consumes that Retrieval_Result and adds nothing to the storage or retrieval layer. It adds prompt construction with a bounded context budget, answer generation through the chat completions endpoint, citation markers that map to a printed source list, citation validation, an explicit refusal path, a single end-to-end command-line script, an append-only Answer_Log, an evaluation run over at least ten questions with hand-entered quality ratings, the README with a "What I Learned" section, a RAG versus fine-tuning comparison, a demo shot list, and the submission and self-check checklists. Week 1 and Week 2 modules are not modified.
+Phase 3 consumes that Retrieval_Result and adds nothing to the storage or retrieval layer. It adds prompt construction with a bounded context budget, answer generation through the chat completions endpoint, citation markers that map to a printed source list, citation validation, an explicit refusal path, a single end-to-end command-line script, an append-only Answer_Log, an evaluation run over at least ten questions with hand-entered quality ratings, the README with a "What I Learned" section, a RAG versus fine-tuning comparison, a demo shot list, and the submission and self-check checklists. Phase 1 and Phase 2 modules are not modified.
 
-Out of scope for Week 3: changing the chunking algorithm, changing the vector store, streaming responses, a web or graphical interface, multi-turn conversation memory, and re-ranking of retrieved Chunks.
+Out of scope for Phase 3: changing the chunking algorithm, changing the vector store, streaming responses, a web or graphical interface, multi-turn conversation memory, and re-ranking of retrieved Chunks.
 
 ## Glossary
 
-The following terms are carried over unchanged from the Week 1 and Week 2 requirements documents and keep their existing meanings here: **Ask_My_Docs**, **Configuration**, **Embedding_Provider**, **Embedder**, **Max_Input_Length**, **Max_Retry_Attempts**, **Request_Timeout**, **Sample_Notes_Folder**, **Chunk**, **Chunk_Size**, **Chunk_Overlap**, **Similarity_Score**, **Chroma_Store**, **Retriever**, **Top_K**, **Relevance_Threshold**, **Retrieval_Result**, **SearchHit**, **No_Relevant_Context**, **Query_Script**, **Retrieval_Log**, **Question_Set**, **Learning_Notes**, and **Reporter-style redaction**. Week 3 adds the following terms.
+The following terms are carried over unchanged from the Phase 1 and Phase 2 requirements documents and keep their existing meanings here: **Ask_My_Docs**, **Configuration**, **Embedding_Provider**, **Embedder**, **Max_Input_Length**, **Max_Retry_Attempts**, **Request_Timeout**, **Sample_Notes_Folder**, **Chunk**, **Chunk_Size**, **Chunk_Overlap**, **Similarity_Score**, **Chroma_Store**, **Retriever**, **Top_K**, **Relevance_Threshold**, **Retrieval_Result**, **SearchHit**, **No_Relevant_Context**, **Query_Script**, **Retrieval_Log**, **Question_Set**, **Learning_Notes**, and **Reporter-style redaction**. Phase 3 adds the following terms.
 
 - **Retrieval_Outcome**: The single value the Retriever reports for one question, being exactly one of `RELEVANT_CONTEXT`, `NO_RELEVANT_CONTEXT`, or `EMPTY_COLLECTION`.
 - **Supplied_Chunk**: One Chunk of the Retrieval_Result that the Prompt_Builder placed into the Context_Block of one Assembled_Prompt.
@@ -24,7 +24,7 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 - **Context_Budget**: The configured maximum permitted Prompt_Length. Setting name `Context_Budget`, default `12000`, permitted range 1000 to 200000.
 - **Over_Budget**: The condition holding when the Prompt_Length of the Assembled_Prompt built from every SearchHit of the Retrieval_Result exceeds the Context_Budget.
 - **Dropped_Chunk_Count**: The number of SearchHit values of the Retrieval_Result that the Prompt_Builder excluded from the Context_Block in order to satisfy the Context_Budget.
-- **Chat_Provider**: The configured source of chat completions, independent of the Embedding_Provider. Week 3 supports the single value `openai`. Setting name `Chat_Provider`, default `openai`.
+- **Chat_Provider**: The configured source of chat completions, independent of the Embedding_Provider. Phase 3 supports the single value `openai`. Setting name `Chat_Provider`, default `openai`.
 - **Chat_Model**: The configured chat completions model name used to generate answers. Setting name `Chat_Model`, default `gpt-4o-mini`.
 - **Answer_Generator**: The Ask_My_Docs component that sends one Assembled_Prompt to the chat completions endpoint of the Chat_Provider and returns one Generated_Answer.
 - **Generated_Answer**: The answer text the Chat_Model returned for one Assembled_Prompt, together with the Token_Usage of that call.
@@ -41,13 +41,13 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 - **Ask_Script**: The runnable command-line script that accepts one question string, invokes the Retriever, the Prompt_Builder, the Answer_Generator, and the Citation_Validator, and prints either a presented answer with its Source_List or a Refusal.
 - **Answer_Log**: The append-only machine-readable file to which one Answer_Log_Record is written for every Ask_Script and Evaluation_Script answer attempt. Setting name `Answer_Log`, default path `logs/answers.jsonl`.
 - **Answer_Log_Record**: One JSON object, serialized on a single line, recording one answer attempt.
-- **Answer_Log_Schema_Version**: The version value held in every Answer_Log_Record that identifies the field set of that Answer_Log_Record. Week 3 writes the single value `1`.
+- **Answer_Log_Schema_Version**: The version value held in every Answer_Log_Record that identifies the field set of that Answer_Log_Record. Phase 3 writes the single value `1`.
 - **Prompt_Hash**: The lower-case hexadecimal SHA-256 digest of the UTF-8 encoding of the Assembled_Prompt, recorded in place of the prompt text.
 - **Retrieval_Summary**: The part of one Answer_Log_Record holding the Retrieval_Outcome, the Top_K used, the Relevance_Threshold used, and, for every SearchHit of the Retrieval_Result, the source path, the ordinal index, the character offset range, and the Similarity_Score.
-- **Grounding_Check**: One of the two Week 3 checks that the answer text depends on retrieved context: the Positive_Grounding_Question and the Negative_Grounding_Question.
+- **Grounding_Check**: One of the two Phase 3 checks that the answer text depends on retrieved context: the Positive_Grounding_Question and the Negative_Grounding_Question.
 - **Positive_Grounding_Question**: A question whose answer appears in the Sample_Notes_Folder and nowhere in the System_Prompt, used to confirm that the presented answer draws on the Context_Block.
 - **Negative_Grounding_Question**: A question whose answer appears nowhere in the Sample_Notes_Folder, used to confirm that Ask_My_Docs refuses rather than inventing an answer.
-- **Evaluation_Question_Set**: The UTF-8 text file holding the Week 3 evaluation questions, one question per non-empty line. Setting name `Evaluation_Question_Set`, default path `question-sets/evaluation-questions.txt`. Required question count at least 10, of which at least one is a Negative_Grounding_Question.
+- **Evaluation_Question_Set**: The UTF-8 text file holding the Phase 3 evaluation questions, one question per non-empty line. Setting name `Evaluation_Question_Set`, default path `question-sets/evaluation-questions.txt`. Required question count at least 10, of which at least one is a Negative_Grounding_Question.
 - **Evaluation_Script**: The runnable script that runs every question of the Evaluation_Question_Set, records the results, accepts the Quality_Ratings, and writes the Evaluation_Report.
 - **Quality_Rating**: The hand-entered integer from 1 to 5 recording the learner's judgement of one answer, or empty for not yet rated.
 - **Mean_Quality_Rating**: The arithmetic mean of the non-empty Quality_Ratings of one evaluation run, rounded to two decimal places.
@@ -64,20 +64,20 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 
 ## Requirements
 
-### Requirement 1: Week 3 Configuration Extension
+### Requirement 1: Phase 3 Configuration Extension
 
-**User Story:** As the learner, I want every Week 3 setting read from the environment with a documented default, so that I can change generation behaviour without editing code.
+**User Story:** As the learner, I want every Phase 3 setting read from the environment with a documented default, so that I can change generation behaviour without editing code.
 
 #### Acceptance Criteria
 
 1. THE Configuration SHALL expose the settings Chat_Provider, Context_Budget, Chat_Model, Answer_Log, Evaluation_Question_Set, and Evaluation_Report, each read from an environment variable and each resolving to the default recorded in the Glossary when the environment variable is absent or empty.
-2. THE Configuration SHALL retain the Week 1 and Week 2 setting names, resolved values, and validation behaviour unchanged.
+2. THE Configuration SHALL retain the Phase 1 and Phase 2 setting names, resolved values, and validation behaviour unchanged.
 3. IF the resolved Chat_Provider, after removal of surrounding whitespace and conversion to lower case, does not equal `openai`, THEN THE Configuration SHALL raise a configuration error naming the setting name Chat_Provider, the rejected value, and the supported value `openai`.
 4. IF the resolved Context_Budget is not an integer in the range 1000 to 200000 inclusive, THEN THE Configuration SHALL raise a configuration error naming the setting name Context_Budget, the rejected value, and the permitted range.
 5. IF the resolved Chat_Model is empty after removal of surrounding whitespace, THEN THE Configuration SHALL raise a configuration error naming the setting name Chat_Model.
 6. WHEN the Configuration resolves the Answer_Log, the Evaluation_Question_Set, and the Evaluation_Report, THE Configuration SHALL resolve each relative path against the repository root and return an absolute path.
 7. THE Configuration SHALL permit every combination of Embedding_Provider and Chat_Provider, so that a local Embedding_Provider resolves together with a remote Chat_Provider.
-8. THE Configuration SHALL record every Week 3 setting name, its environment variable name, and its default in both `.env.example` and the Readme.
+8. THE Configuration SHALL record every Phase 3 setting name, its environment variable name, and its default in both `.env.example` and the Readme.
 
 ### Requirement 2: Prompt Construction
 
@@ -92,7 +92,7 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 5. THE User_Prompt SHALL hold the Context_Block and the learner's question string.
 6. WHEN the Prompt_Builder receives the same Retrieval_Result and the same Configuration on two separate invocations, THE Prompt_Builder SHALL return two Assembled_Prompts with identical System_Prompt text, identical User_Prompt text, and identical Citation_Tables.
 7. THE Prompt_Builder SHALL build the Citation_Table so that each Citation_Number maps to exactly one Supplied_Chunk and carries that Chunk's source path, ordinal index, start character offset, end character offset, and Similarity_Score.
-8. THE Prompt_Builder SHALL read the Retrieval_Result without modifying the Retriever, the Chroma_Store, or any Week 1 or Week 2 module.
+8. THE Prompt_Builder SHALL read the Retrieval_Result without modifying the Retriever, the Chroma_Store, or any Phase 1 or Phase 2 module.
 
 ### Requirement 3: Context Budget
 
@@ -115,13 +115,13 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 #### Acceptance Criteria
 
 1. WHEN the Answer_Generator receives an Assembled_Prompt, THE Answer_Generator SHALL send the System_Prompt and the User_Prompt to the chat completions endpoint of the Chat_Provider using the Chat_Model and SHALL return one Generated_Answer.
-2. THE Answer_Generator SHALL apply the Request_Timeout, the Max_Retry_Attempts, and the retry classification of transient against permanent failures defined for the Week 1 Embedder.
+2. THE Answer_Generator SHALL apply the Request_Timeout, the Max_Retry_Attempts, and the retry classification of transient against permanent failures defined for the Phase 1 Embedder.
 3. WHERE the Chat_Provider requires an API key, THE Answer_Generator SHALL read that API key from the environment only, and SHALL apply Reporter-style redaction to every console string, error message, and log record it produces.
 4. IF the Chat_Provider requires an API key and the API key environment variable of that Chat_Provider is absent or empty, THEN THE Answer_Generator SHALL raise an error naming the required environment variable and SHALL issue no chat completions request.
 5. WHEN the chat completions endpoint returns a successful response, THE Answer_Generator SHALL return the Token_Usage holding the prompt token count, the completion token count, and the total token count of that response.
 6. IF the chat completions endpoint reports no token counts, THEN THE Answer_Generator SHALL return a Token_Usage whose prompt token count, completion token count, and total token count are each zero.
 7. THE Answer_Generator SHALL return a Token_Usage whose three counts are non-negative integers and whose total token count equals the sum of the prompt token count and the completion token count.
-8. THE Answer_Generator SHALL leave the Week 1 Embedder byte-identical and SHALL live in a module added for Week 3.
+8. THE Answer_Generator SHALL leave the Phase 1 Embedder byte-identical and SHALL live in a module added for Phase 3.
 
 ### Requirement 5: Grounding Checks
 
@@ -182,7 +182,7 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 2. WHERE the Ask_Script is invoked with an optional Top_K value, THE Ask_Script SHALL pass that value to the Retriever in place of the configured Top_K.
 3. IF the Ask_Script is invoked with no question string, THEN THE Ask_Script SHALL print a usage message naming the required question argument and SHALL terminate with a non-zero exit status.
 4. IF the Ask_Script is invoked with a question string that is empty after removal of surrounding whitespace, THEN THE Ask_Script SHALL print an error naming the empty question and SHALL terminate with a non-zero exit status.
-5. WHEN the Ask_Script completes an answer attempt, THE Ask_Script SHALL write one Answer_Log_Record and SHALL leave the Week 2 Retrieval_Log behaviour unchanged.
+5. WHEN the Ask_Script completes an answer attempt, THE Ask_Script SHALL write one Answer_Log_Record and SHALL leave the Phase 2 Retrieval_Log behaviour unchanged.
 6. THE Ask_Script SHALL implement `main(argv) -> int` over library code, SHALL route every console string through the Reporter, and SHALL raise typed exceptions from library code rather than calling process exit from library code.
 7. WHEN the Ask_Script completes without error, THE Ask_Script SHALL return the exit status 0.
 
@@ -242,7 +242,7 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 2. THE Readme SHALL hold setup instructions covering the editable install, the environment variables with their defaults, the ingest command, and the Ask_Script command.
 3. THE Readme SHALL hold instructions for adding the reader's own documents to the Sample_Notes_Folder and re-running the ingest command.
 4. THE Readme SHALL hold a What_I_Learned_Section explaining, in the learner's own words, what an embedding is, why Chunk_Size and Chunk_Overlap matter, and how the retrieval-augmented generation pipeline works end to end.
-5. THE Readme SHALL name the chosen Chunk_Size and the chosen Top_K and SHALL give the reasoning for each, referencing the Week 2 Top_K_Report.
+5. THE Readme SHALL name the chosen Chunk_Size and the chosen Top_K and SHALL give the reasoning for each, referencing the Phase 2 Top_K_Report.
 6. THE Readme SHALL hold at least one example question with its presented answer and its cited Source_List, shown as the committed Example_Screenshot.
 7. THE Readme SHALL hold no API key value and no substring of an API key of length 8 or greater.
 8. THE Readme SHALL list every exit status the Ask_Script and the Evaluation_Script return, each paired with the condition that produces it.
@@ -278,5 +278,5 @@ The following terms are carried over unchanged from the Week 1 and Week 2 requir
 1. THE committed Sample_Notes_Folder SHALL hold small non-sensitive placeholder notes sufficient to answer the Readme example question.
 2. THE repository `.gitignore` SHALL exclude `.env`, the personal note files of the Sample_Notes_Folder other than its README, the Chroma Persist_Directory, the Retrieval_Log and Answer_Log directory, and the relevance review comma-separated files.
 3. THE `pyproject.toml` SHALL pin every dependency, including the chat completions client dependency, to an exact version.
-4. THE Week 3 modules SHALL hold comments explaining the prompt construction rules, the context budget reduction rule, and the citation validation rule.
-5. THE Week 3 work SHALL leave the Week 1 and Week 2 modules listed as frozen byte-identical, and SHALL change only `config.py` and `stores/factory.py` among pre-existing modules, and only by addition.
+4. THE Phase 3 modules SHALL hold comments explaining the prompt construction rules, the context budget reduction rule, and the citation validation rule.
+5. THE Phase 3 work SHALL leave the Phase 1 and Phase 2 modules listed as frozen byte-identical, and SHALL change only `config.py` and `stores/factory.py` among pre-existing modules, and only by addition.

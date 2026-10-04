@@ -2,12 +2,12 @@
 
 ## Overview
 
-Week 1 of Ask My Docs builds four hand-written layers — configuration, embedding, document loading, chunking — plus a deliberately simple in-memory store, and wires them together in four runnable scripts. Nothing in this design uses a RAG orchestration framework. The only third-party code is `openai` (raw embeddings endpoint), `sentence-transformers` (local model inference), `pypdf` (page text extraction), `numpy` (float64 vector arithmetic), `python-dotenv` (env file loading), and `pytest` + `hypothesis` (tests). Every pipeline step — discovery, decoding, newline normalization, chunk boundary arithmetic, batching, retry, cosine similarity, top-K ranking — is code the learner writes and tests.
+Phase 1 of Ask My Docs builds four hand-written layers — configuration, embedding, document loading, chunking — plus a deliberately simple in-memory store, and wires them together in four runnable scripts. Nothing in this design uses a RAG orchestration framework. The only third-party code is `openai` (raw embeddings endpoint), `sentence-transformers` (local model inference), `pypdf` (page text extraction), `numpy` (float64 vector arithmetic), `python-dotenv` (env file loading), and `pytest` + `hypothesis` (tests). Every pipeline step — discovery, decoding, newline normalization, chunk boundary arithmetic, batching, retry, cosine similarity, top-K ranking — is code the learner writes and tests.
 
 ### Design goals
 
 1. **Mechanics are visible.** Chunking is explicit index arithmetic over a Python `str`, not a delegated call. Cosine similarity is a dot product over two norms. The learner can read the whole boundary calculation in one screen.
-2. **The store is the only thing Week 2 replaces.** `Vector_Store_Interface` is the single seam. The chunker and embedder modules never import it (Requirement 10.3), so swapping `In_Memory_Store` for a Chroma-backed implementation in Week 2 touches exactly one module plus one factory line.
+2. **The store is the only thing Phase 2 replaces.** `Vector_Store_Interface` is the single seam. The chunker and embedder modules never import it (Requirement 10.3), so swapping `In_Memory_Store` for a Chroma-backed implementation in Phase 2 touches exactly one module plus one factory line.
 3. **Every FOR ALL criterion becomes an executable property.** Requirements 4, 8, and 10 state universally quantified behaviour. Each such criterion maps to one Hypothesis property test running at least 100 examples (Requirement 13.7).
 4. **Determinism where the requirements demand it.** Discovery order (6.8), document text (7.9), chunk boundaries (8.7), and query result order (10.9, 10.15) are all fully determined by inputs and configuration. Nothing depends on filesystem iteration order, dict ordering, or wall-clock time.
 5. **No network in the test suite.** A substitute embedder, injected everywhere the real one is used, makes the suite runnable with zero API key and zero sockets (Requirements 13.5, 13.6) inside the 120-second budget (13.8).
@@ -20,7 +20,7 @@ Week 1 of Ask My Docs builds four hand-written layers — configuration, embeddi
 | `BaseEmbedder` implements validation and batching once; concrete providers implement only `_embed_batch` | Requirement 3.3 (batch result at position *i* equals the single-text result) becomes true by construction: `embed_text(t)` is defined as `embed_texts([t])[0]`. It cannot drift. |
 | `Configuration` is loaded from an injected `Mapping[str, str]`, defaulting to `os.environ` | Requirement 1 has 12 criteria about parsing, defaulting, and rejecting env values. Injecting the mapping makes all 12 testable as pure functions, with no `monkeypatch` of process state and no risk of a stray real API key leaking into a test run. |
 | Library code raises typed exceptions; only script `main()` functions call `sys.exit` | Requirements 1.3, 1.5, 1.8, 1.9, 1.11, 1.12, 6.5, 11.9, 11.10 say "terminate with a non-zero exit status". Keeping `sys.exit` at the script boundary keeps the library importable and testable while preserving the observable exit-status behaviour. |
-| Vectors are `list[float]` at every public boundary; `numpy` is used only inside similarity and ranking | Keeps the interfaces plain-Python and JSON-shaped, which is what Chroma will want in Week 2, while still getting float64 arithmetic where numerical tolerance matters (Requirements 4.2–4.5). |
+| Vectors are `list[float]` at every public boundary; `numpy` is used only inside similarity and ranking | Keeps the interfaces plain-Python and JSON-shaped, which is what Chroma will want in Phase 2, while still getting float64 arithmetic where numerical tolerance matters (Requirements 4.2–4.5). |
 | Newline normalization happens in the loader, never in the chunker | Requirement 7.10 requires chunk offsets to index the returned `Document.text` directly. If the chunker also transformed text, offsets would refer to a string nobody holds. One normalization point, one source of truth. |
 
 ### Research notes informing the design
@@ -30,13 +30,13 @@ Week 1 of Ask My Docs builds four hand-written layers — configuration, embeddi
 - **PDF text extraction.** `pypdf` exposes `PdfReader.pages` in document order and `page.extract_text()` per page, and sets `PdfReader.is_encrypted` for password-protected files (Requirement 7.11). Extraction quality varies by producer; a scanned PDF legitimately yields no text, which is why Requirement 7.8 treats "no non-whitespace characters" as a warning-and-skip rather than an error.
 - **Retry backoff bounds.** Requirement 2.9 constrains each wait to at least 1 and at most 30 seconds. Exponential backoff `2**attempt` clamped into `[1, 30]` gives 1, 2, 4, 8, 16, 30, 30… which satisfies the bound for the full permitted retry range of 0 to 10 attempts.
 
-### Out of scope for Week 1
+### Out of scope for Phase 1
 
 Persistent storage, approximate nearest-neighbour indexing, metadata filtering, re-ranking, prompt construction, LLM generation, citations, and any UI. The demonstration query in the Pipeline_Script (Requirement 11.8) is a direct top-3 scan, not a retrieval subsystem.
 
 ## Architecture
 
-### Week 1 pipeline
+### Phase 1 pipeline
 
 ```mermaid
 flowchart TD
@@ -76,7 +76,7 @@ flowchart BT
         embeddings[embeddings/<br/>Embedder, providers, retry]
     end
 
-    subgraph swap["Week 2 swap point"]
+    subgraph swap["Phase 2 swap point"]
         storebase[stores/base.py<br/>Vector_Store_Interface]
         memstore[stores/memory.py<br/>In_Memory_Store]
     end
@@ -111,22 +111,22 @@ Read the arrows as "depends on". Two absences are load-bearing, and both are enf
 
 Only `stores/memory.py` and the scripts know a store exists. `stores/memory.py` depends on `similarity.py` because top-K ranking needs cosine similarity (Requirement 10.1); the dependency runs store → similarity, never the reverse.
 
-### Week 2 and Week 3 seams
+### Phase 2 and Phase 3 seams
 
 ```mermaid
 flowchart LR
-    subgraph w1["Week 1 - built now"]
+    subgraph w1["Phase 1 - built now"]
         VSI[Vector_Store_Interface<br/>add / count / query]
         IMS[In_Memory_Store]
         IMS -.implements.-> VSI
     end
 
-    subgraph w2["Week 2 - Chroma"]
+    subgraph w2["Phase 2 - Chroma"]
         CS["Chroma_Store<br/>same three operations<br/>plus persist and reset"]
         CS -.implements.-> VSI
     end
 
-    subgraph w3["Week 3 - generation"]
+    subgraph w3["Phase 3 - generation"]
         PB[Prompt_Builder]
         GEN[Answer_Generator]
         CIT[Citation_Formatter]
@@ -137,13 +137,13 @@ flowchart LR
     GEN --> CIT
 ```
 
-**Week 2 seam (storage).** `Vector_Store_Interface` declares exactly the three operations Requirement 10.1 names: batch add, count, top-K query. A Chroma-backed implementation satisfies the same contract, so the swap is: add `stores/chroma_store.py`, add one branch to `build_store(configuration)`, change nothing in `loading/`, `chunking.py`, or `embeddings/`. Three affordances are built in Week 1 specifically to make that swap painless:
+**Phase 2 seam (storage).** `Vector_Store_Interface` declares exactly the three operations Requirement 10.1 names: batch add, count, top-K query. A Chroma-backed implementation satisfies the same contract, so the swap is: add `stores/chroma_store.py`, add one branch to `build_store(configuration)`, change nothing in `loading/`, `chunking.py`, or `embeddings/`. Three affordances are built in Phase 1 specifically to make that swap painless:
 
-- `Chunk.chunk_id` yields a stable string id (`"{source_path}#{index}"`), unique because Requirement 7.3 makes `source_path` unique per document and 8.12 makes `index` unique per document. Chroma requires caller-supplied ids; Week 1 already has them.
+- `Chunk.chunk_id` yields a stable string id (`"{source_path}#{index}"`), unique because Requirement 7.3 makes `source_path` unique per document and 8.12 makes `index` unique per document. Chroma requires caller-supplied ids; Phase 1 already has them.
 - `Chunk.to_metadata()` returns a flat `dict[str, str | int]` of exactly the fields Requirement 8.10 mandates — the shape Chroma's metadata column accepts.
-- `query` returns `SearchHit` objects carrying `chunk`, `score`, and `insertion_index` rather than raw tuples, so Week 2 can populate `score` from a Chroma distance without changing any caller. The interface docstring states the contract as "descending similarity, ties broken by ascending insertion index" so a Chroma implementation inherits the same observable ordering rule.
+- `query` returns `SearchHit` objects carrying `chunk`, `score`, and `insertion_index` rather than raw tuples, so Phase 2 can populate `score` from a Chroma distance without changing any caller. The interface docstring states the contract as "descending similarity, ties broken by ascending insertion index" so a Chroma implementation inherits the same observable ordering rule.
 
-**Week 3 seam (generation).** Week 3 consumes `list[SearchHit]` and nothing else from the storage layer. `SearchHit.chunk.source_path` plus `start_offset`/`end_offset` is already enough to render a citation that points at a character range in a named file, so Week 3 adds modules (`prompting.py`, `generation.py`) without modifying any Week 1 data model. Week 1 deliberately does not add an `answer` or `prompt` concept anywhere.
+**Phase 3 seam (generation).** Phase 3 consumes `list[SearchHit]` and nothing else from the storage layer. `SearchHit.chunk.source_path` plus `start_offset`/`end_offset` is already enough to render a citation that points at a character range in a named file, so Phase 3 adds modules (`prompting.py`, `generation.py`) without modifying any Phase 1 data model. Phase 1 deliberately does not add an `answer` or `prompt` concept anywhere.
 
 ### Repository layout
 
@@ -189,9 +189,9 @@ RAG/
 │   │   └── factory.py          # build_embedder(configuration)
 │   └── stores/
 │       ├── __init__.py
-│       ├── base.py             # Vector_Store_Interface          <-- Week 2 swap point
+│       ├── base.py             # Vector_Store_Interface          <-- Phase 2 swap point
 │       ├── memory.py           # In_Memory_Store
-│       └── factory.py          # build_store(configuration)      <-- Week 2 adds one branch
+│       └── factory.py          # build_store(configuration)      <-- Phase 2 adds one branch
 └── tests/
     ├── conftest.py             # fixtures: substitute embedder, temp notes folder, env maps
     ├── fakes.py                # Fake_Embedder, Scripted_Provider, Fake_Clock
@@ -472,7 +472,7 @@ Note the signatures: `str`, `Document`, `Chunk`, `list`. No store type appears, 
 
 ```python
 class VectorStoreInterface(ABC):
-    """The Week 2 swap point. Exactly the three operations of Req 10.1."""
+    """The Phase 2 swap point. Exactly the three operations of Req 10.1."""
 
     @abstractmethod
     def add(self, chunks: Sequence[Chunk],
@@ -508,11 +508,11 @@ class InMemoryStore(VectorStoreInterface):
 
 `InMemoryStore.add` validates in this order, all before mutating anything: (1) `len(chunks) == len(embeddings)` else report both counts (10.7); (2) return early for an empty batch (10.6); (3) all incoming vectors share one length; (4) that length matches `self._dimensionality` when already set, else report both lengths (10.8); (5) build the full `StoredRecord` list; (6) `self._records.extend(...)` and set `_dimensionality`. Steps 5 and 6 cannot fail, which is what makes the atomicity guarantee of 10.7 and 10.8 real rather than aspirational.
 
-`InMemoryStore.query` computes similarity against every record — a linear scan, which is exactly the point for Week 1 — then sorts by `(-score, insertion_index)` and slices to `k`. Sorting on that composite key gives the tie-break of 10.15 and the determinism of 10.9 in one step, with no reliance on sort stability.
+`InMemoryStore.query` computes similarity against every record — a linear scan, which is exactly the point for Phase 1 — then sorts by `(-score, insertion_index)` and slices to `k`. Sorting on that composite key gives the tie-break of 10.15 and the determinism of 10.9 in one step, with no reliance on sort stability.
 
 ```python
 def build_store(configuration: Configuration) -> VectorStoreInterface:
-    """Week 1 always returns InMemoryStore. Week 2 adds the Chroma branch here."""
+    """Phase 1 always returns InMemoryStore. Phase 2 adds the Chroma branch here."""
 ```
 
 ### Scripts
@@ -552,7 +552,7 @@ class Chunk:
 
     @property
     def chunk_id(self) -> str:
-        return f"{self.source_path}#{self.index}"    # Week 2 / Chroma id seam
+        return f"{self.source_path}#{self.index}"    # Phase 2 / Chroma id seam
 
     def to_metadata(self) -> dict[str, str | int]:
         return {"source_path": self.source_path, "index": self.index,
@@ -569,7 +569,7 @@ class StoredRecord:
 
 @dataclass(frozen=True)
 class SearchHit:
-    """One query result (Req 10.9, 11.8). Week 3 renders citations from this."""
+    """One query result (Req 10.9, 11.8). Phase 3 renders citations from this."""
     chunk: Chunk
     score: float                   # Cosine_Similarity to the query vector
     insertion_index: int
@@ -763,7 +763,7 @@ Chunk 0 has length 3 by code points, not 6 by UTF-8 bytes and not 4 by UTF-16 un
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-Week 1's core is three pure, in-memory components — cosine similarity, chunk boundary arithmetic, and a linear-scan store — which is exactly the profile property-based testing was built for. Requirements 4, 8, and 10 state 14 criteria in explicit FOR ALL form, and Requirement 13.7 mandates that each be verified with at least 100 generated inputs. The 31 properties below are the result of the prework analysis and its redundancy reflection: every FOR ALL criterion in Requirements 4, 8, and 10 maps to at least one property, and no two properties run the same generator to make the same assertion.
+Phase 1's core is three pure, in-memory components — cosine similarity, chunk boundary arithmetic, and a linear-scan store — which is exactly the profile property-based testing was built for. Requirements 4, 8, and 10 state 14 criteria in explicit FOR ALL form, and Requirement 13.7 mandates that each be verified with at least 100 generated inputs. The 31 properties below are the result of the prework analysis and its redundancy reflection: every FOR ALL criterion in Requirements 4, 8, and 10 maps to at least one property, and no two properties run the same generator to make the same assertion.
 
 Properties 1–19 cover Requirements 4, 8, and 10 (mandated by 13.7): 4 for similarity, 9 for chunking, 6 for the store. The reflection consolidated 14 candidate chunking properties down to 9 and 10 candidate store properties down to 6 by folding subsumed criteria into the properties that already imply them. Properties 20–31 are supplementary, covering universally quantified behaviour elsewhere in the spec where generated input finds bugs that examples miss.
 
@@ -956,7 +956,7 @@ Two choices in the strategies above are worth calling out. First, degenerate vec
 - Strategy: `document_text` × `chunk_config()` × a source-path string strategy.
 - Assertions: `text[c.start_offset:c.end_offset] == c.text`; `c.end_offset - c.start_offset == len(c.text)`; `c.source_path == source_path`; `0 <= c.start_offset <= c.end_offset <= len(text)`.
 - Examples: 200 (`pure`).
-- Note: absorbs the metadata-presence criterion 8.10 per the prework reflection. This is the property Week 3 citations depend on — without it, offsets could be plausible but point at the wrong characters.
+- Note: absorbs the metadata-presence criterion 8.10 per the prework reflection. This is the property Phase 3 citations depend on — without it, offsets could be plausible but point at the wrong characters.
 
 **Validates: Requirements 8.11, 8.10**
 
@@ -1309,7 +1309,7 @@ The through-line: configuration and cost problems fail immediately and loudly, p
 
 ### Cost and rate-limit guardrails
 
-Week 1 is the first time the learner points a loop at a paid API, so three guardrails sit between the loop and the provider.
+Phase 1 is the first time the learner points a loop at a paid API, so three guardrails sit between the loop and the provider.
 
 1. **`Max_Chunks_Per_Run`, default 2000.** After chunking and *before the first request*, the Pipeline_Script compares the total chunk count against this maximum and terminates with exit 4 if it is exceeded, naming both numbers (Requirement 11.9). This is the blast-radius limit: at the default `Chunk_Size` of 500 characters, 2000 chunks is roughly one million characters, a plausible ceiling for 5–10 personal notes, and it catches the two realistic accidents — pointing the folder at a huge directory, or setting `Chunk_Size` to 1.
 

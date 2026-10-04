@@ -1,7 +1,7 @@
 ﻿"""In-memory store: a linear scan, which is exactly the point.
 
-Week 1 ranks by comparing the query against every stored vector. That is O(n)
-and obviously correct, which makes it the reference implementation Week 2's
+Phase 1 ranks by comparing the query against every stored vector. That is O(n)
+and obviously correct, which makes it the reference implementation Phase 2's
 Chroma store is checked against.
 
 ``add`` validates everything before mutating anything, so the atomicity the

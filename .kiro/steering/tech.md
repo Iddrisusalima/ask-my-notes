@@ -27,7 +27,7 @@ vector database clients. If a task seems to need one, the task is wrong.
 ## Configuration
 
 Configuration is environment variables only, read through `load_configuration`, with documented
-defaults. Week 1 variables carry their exact names; Week 2 settings are named by the design's
+defaults. Phase 1 variables carry their exact names; Phase 2 settings are named by the design's
 setting name, and `.env.example` plus the README are the source of truth for both.
 
 | Setting | Variable / setting name | Default |
@@ -63,7 +63,7 @@ python -m pytest -q                      # whole test suite
 python scripts/01_embed_one.py           # embed one sentence
 python scripts/02_compare_sentences.py   # compare sentence similarity
 python scripts/03_chunking_experiment.py # chunking experiment
-python scripts/04_pipeline.py            # Week 1 in-memory pipeline
+python scripts/04_pipeline.py            # Phase 1 in-memory pipeline
 python scripts/05_ingest.py              # incremental ingest into Chroma
 python scripts/06_query.py "question"    # retrieve for a question
 python scripts/07_topk_experiment.py     # top-K tuning experiment

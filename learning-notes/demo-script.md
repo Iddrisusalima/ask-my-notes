@@ -41,7 +41,7 @@ recording.
 | Time | Shot | Say this | Lesson shown |
 |---|---|---|---|
 | 0:00-0:12 | `README.md` open | "Ask My Docs answers questions about my own notes, using only what it retrieves, with citations. Every RAG stage is hand-written - no LangChain, no framework hiding a step." | - |
-| 0:12-0:32 | Expand `.kiro/` in the sidebar: `specs/`, `steering/`, `hooks/`, `agents/`, `skills/`, `settings/mcp.json` | "Three weekly specs drove this: requirements, design, and tasks. Steering files pin the rules every task follows. Six hooks, three scoped agents, three skills, and an MCP fetch server." | 1, 2, 3, 5, 6, 7 |
+| 0:12-0:32 | Expand `.kiro/` in the sidebar: `specs/`, `steering/`, `hooks/`, `agents/`, `skills/`, `settings/mcp.json` | "Three phase specs drove this: requirements, design, and tasks. Steering files pin the rules every task follows. Six hooks, three scoped agents, three skills, and an MCP fetch server." | 1, 2, 3, 5, 6, 7 |
 | 0:32-0:45 | Open `.kiro/agents/retrieval-tuner.json` | "The agents have different permission envelopes. This one reads and measures but cannot write, and ingest is gated behind a confirmation because it costs money." | 7 |
 | 0:45-1:05 | `python scripts/05_ingest.py` | "Re-running ingest embeds nothing. A SHA-256 hash per file means unchanged notes are skipped - zero embedder calls, four seconds instead of fifty." | - |
 | 1:05-1:30 | `python scripts/06_query.py "What overlap ratio did I settle on?" --top-k 2` | "Retrieval returns the source file, the chunk index, the exact character range, and a cosine score. The top hit is the chunk that actually contains the answer." | - |
@@ -77,7 +77,7 @@ from. Every stage is hand-written. No LangChain, no framework hiding a step."
 
 ## 0:12-0:32 - expanding the .kiro folder
 
-"I built it with Kiro, spec-first. Three weekly specs: requirements in EARS form, a
+"I built it with Kiro, spec-first. Three phase specs: requirements in EARS form, a
 design, and a task list. Steering files pin the rules every task has to follow, like the
 banned-dependency rule and which modules are frozen. Then six hooks, three custom
 agents, three skills, and an MCP server config."

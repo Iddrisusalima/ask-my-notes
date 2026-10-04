@@ -186,8 +186,8 @@ def redact(text: str, api_key: str | None) -> str:
     return result
 
 
-# --- Week 2 additions -------------------------------------------------------
-# Appended, never interleaved: every Week 1 field, name, and default above is
+# --- Phase 2 additions -------------------------------------------------------
+# Appended, never interleaved: every Phase 1 field, name, and default above is
 # untouched, so existing construction sites and tests stay valid.
 
 SUPPORTED_STORES: Final = ("memory", "chroma")
@@ -226,7 +226,7 @@ def _resolve(value: str | None, default: Path) -> Path:
 
 
 def load_store_settings(env: Mapping[str, str] | None = None) -> StoreSettings:
-    """Read the Week 2 store settings, validated."""
+    """Read the Phase 2 store settings, validated."""
     env = os.environ if env is None else env
 
     raw_store = _read(env, "ASKMYDOCS_STORE")
@@ -241,7 +241,7 @@ def load_store_settings(env: Mapping[str, str] | None = None) -> StoreSettings:
     metric = (raw_metric or "cosine").lower()
     if metric not in SUPPORTED_METRICS:
         raise ConfigurationError(
-            f"ASKMYDOCS_DISTANCE_METRIC is {raw_metric!r}. Week 2 supports only "
+            f"ASKMYDOCS_DISTANCE_METRIC is {raw_metric!r}. Phase 2 supports only "
             f"'cosine', so that a score means the same thing as the "
             f"Similarity_Calculator's cosine similarity."
         )
@@ -275,7 +275,7 @@ def load_store_settings(env: Mapping[str, str] | None = None) -> StoreSettings:
 
 
 def load_retrieval_settings(env: Mapping[str, str] | None = None) -> RetrievalSettings:
-    """Read the Week 2 retrieval settings, validated."""
+    """Read the Phase 2 retrieval settings, validated."""
     env = os.environ if env is None else env
 
     top_k = _parse_int(env, "ASKMYDOCS_TOP_K", 5)

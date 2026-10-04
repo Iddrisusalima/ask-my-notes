@@ -1,57 +1,57 @@
-# Implementation Plan: Week 2 — Vector Database and Retrieval
+# Implementation Plan: Phase 2 — Vector Database and Retrieval
 
 ## Overview
 
-Week 2 adds a second implementation of the Week 1 `Vector_Store_Interface` backed by a persistent Chroma collection, then builds incremental ingest, retrieval with a relevance threshold, an append-only retrieval log, and two measurement scripts on top of it. The language is Python, as the design specifies throughout.
+Phase 2 adds a second implementation of the Phase 1 `Vector_Store_Interface` backed by a persistent Chroma collection, then builds incremental ingest, retrieval with a relevance threshold, an append-only retrieval log, and two measurement scripts on top of it. The language is Python, as the design specifies throughout.
 
-The build order follows the design's module dependency graph strictly: repository and dependency pin → configuration extension → Week 2 errors → `Store_Admin_Interface` and `InMemoryAdminStore` → `chroma_compat` and `ChromaStore` → factory branch → conformance suite across both stores → ingest → retrieval → evaluation → scripts → layering and frozen-module checks → written notes. Nothing is implemented before the module it depends on exists.
+The build order follows the design's module dependency graph strictly: repository and dependency pin → configuration extension → Phase 2 errors → `Store_Admin_Interface` and `InMemoryAdminStore` → `chroma_compat` and `ChromaStore` → factory branch → conformance suite across both stores → ingest → retrieval → evaluation → scripts → layering and frozen-module checks → written notes. Nothing is implemented before the module it depends on exists.
 
-Grouping is aligned with the Week 2 day plan:
+Grouping is aligned with the Phase 2 day plan:
 
 - **Mon–Tue** (tasks 1–11): vector database setup, `Chroma_Store`, the conformance suite, and incremental ingest.
 - **Wed–Thu** (tasks 13–18): the `Retriever`, the `Query_Script`, and the Top-K tuning experiment plus the relevance review.
-- **Fri** (tasks 20–22): retrieval-log integrity and concurrency verification, Week 1 isolation checks, and the `Comparison_Note` and `Learning_Notes`.
+- **Fri** (tasks 20–22): retrieval-log integrity and concurrency verification, Phase 1 isolation checks, and the `Comparison_Note` and `Learning_Notes`.
 
 The `RetrievalLogWriter` is *implemented* Wed–Thu because the `Retriever` cannot append a record without it (Requirement 14.1); Friday's group covers the log's integrity properties, the concurrent-append tests, and the documentation of the record schema.
 
 Two hard constraints apply to the whole plan and are repeated in the tasks they bind:
 
-- **No Week 1 frozen module may be edited.** `chunking.py`, `similarity.py`, `loading/base.py`, `loading/pdf_loader.py`, `loading/markdown_loader.py`, `embeddings/*`, and `models.py` stay byte-identical (Requirements 18.1, 18.8, 18.9). Exactly two pre-existing modules change, both additively: `config.py` and `stores/factory.py`.
-- **Every property test runs at least 100 generated examples** and reports the seed and shrunk input on failure (Requirement 19.3). Properties that touch a Chroma collection run 100 under the `chroma` profile; pure properties run 200 under the Week 1 `pure` profile.
+- **No Phase 1 frozen module may be edited.** `chunking.py`, `similarity.py`, `loading/base.py`, `loading/pdf_loader.py`, `loading/markdown_loader.py`, `embeddings/*`, and `models.py` stay byte-identical (Requirements 18.1, 18.8, 18.9). Exactly two pre-existing modules change, both additively: `config.py` and `stores/factory.py`.
+- **Every property test runs at least 100 generated examples** and reports the seed and shrunk input on failure (Requirement 19.3). Properties that touch a Chroma collection run 100 under the `chroma` profile; pure properties run 200 under the Phase 1 `pure` profile.
 
 ## Tasks
 
 - [ ] 1. Mon–Tue — Dependency pin and repository configuration
 
-  - [ ] 1.1 Pin `chromadb` and register the Week 2 test profile in `pyproject.toml`
+  - [ ] 1.1 Pin `chromadb` and register the Phase 2 test profile in `pyproject.toml`
     - Add an exact `chromadb==<version>` pin; add no hosted vector database client package and no pre-built retrieval, re-ranking, or prompt-orchestration dependency
-    - Register the `chroma` Hypothesis profile (`max_examples=100`, `deadline=None`) and the `slow` marker; keep Week 1's `testpaths`, `--strict-markers`, and default `pure` profile
+    - Register the `chroma` Hypothesis profile (`max_examples=100`, `deadline=None`) and the `slow` marker; keep Phase 1's `testpaths`, `--strict-markers`, and default `pure` profile
     - _Requirements: 2.1, 19.1, 19.3_
 
-  - [ ] 1.2 Extend `.env.example` and `.gitignore` for Week 2
+  - [ ] 1.2 Extend `.env.example` and `.gitignore` for Phase 2
     - List every environment variable of Requirement 1.1 with its default and permitted range, plus `ASKMYDOCS_EMBEDDING_DIM` with the note that a learner on a default model never needs to set it
     - Exclude `.chroma/`, `logs/`, and `reports/relevance-review*.csv` from version control
     - _Requirements: 1.10, 1.11, 14.7_
 
-  - [ ] 1.3 Write the Week 2 README sections in `README.md`
+  - [ ] 1.3 Write the Phase 2 README sections in `README.md`
     - Install command with the exact pin, the `Ingest_Script` command, the `Query_Script` command; that Chroma needs no API key, that the `Persist_Directory` is safe to delete, and the command sequence that rebuilds the collection after deletion
-    - Every Week 2 environment variable with default and range; the resolved `Retrieval_Log` path, one-JSON-object-per-line format, `Log_Schema_Version` value, every record field name, the 500-character truncation limit, and that the log holds verbatim source text and is git-ignored
+    - Every Phase 2 environment variable with default and range; the resolved `Retrieval_Log` path, one-JSON-object-per-line format, `Log_Schema_Version` value, every record field name, the 500-character truncation limit, and that the log holds verbatim source text and is git-ignored
     - The whole-suite test command, the conformance-suite-only command, and the `Comparison_Note` path
     - _Requirements: 1.10, 2.5, 2.6, 14.10, 17.8, 19.9_
 
-  - [ ]* 1.4 Write repository-configuration tests in `tests/test_repository_week2.py`
+  - [ ]* 1.4 Write repository-configuration tests in `tests/test_repository_phase2.py`
     - Assert the `chromadb` pin is exact and no hosted client package is declared; assert the `.gitignore` entries; assert `.env.example` names every Requirement 1.1 variable; assert the README contains the install, ingest, query, reset, and test command strings and the log schema field list
     - _Requirements: 1.10, 1.11, 2.1, 2.5, 2.6, 14.10, 19.1, 19.9_
 
 - [ ] 2. Mon–Tue — Configuration extension and offline dimensionality resolution
 
   - [ ] 2.1 Add `VectorStoreSettings` and `RetrievalSettings` to `src/askmydocs/config.py`
-    - Two frozen dataclasses with the documented defaults; append them to `Configuration` as two defaulted fields, last, so every Week 1 construction site and every Week 1 test still builds a valid `Configuration` unchanged
+    - Two frozen dataclasses with the documented defaults; append them to `Configuration` as two defaulted fields, last, so every Phase 1 construction site and every Phase 1 test still builds a valid `Configuration` unchanged
     - Add `SUPPORTED_STORE_SELECTIONS`, `SUPPORTED_DISTANCE_METRICS`, and `COLLECTION_NAME_PATTERN`
     - _Requirements: 1.1, 1.2, 18.10_
 
-  - [ ] 2.2 Add the Week 2 validation and path-resolution phase to `load_configuration`
-    - Run after the Week 1 phases in the design's order: store selection → distance metric → collection name → `Top_K` → `Relevance_Threshold` → path resolution; trim and lower-case before matching selection and metric
+  - [ ] 2.2 Add the Phase 2 validation and path-resolution phase to `load_configuration`
+    - Run after the Phase 1 phases in the design's order: store selection → distance metric → collection name → `Top_K` → `Relevance_Threshold` → path resolution; trim and lower-case before matching selection and metric
     - Reject an unsupported selection, a metric other than `cosine`, an out-of-range or unparsable `Top_K`, an out-of-range or unparsable `Relevance_Threshold` (rejecting `nan` and `inf`), and a `Collection_Name` violating the character set, first-and-last-character, or 3-to-63 length rule, each with the documented message contents and exit status 2
     - Resolve `Persist_Directory`, `Retrieval_Log`, `Source_Manifest`, and `Question_Set` paths against the repository root when not absolute, anchored on the package location rather than the process working directory
     - _Requirements: 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9_
@@ -61,19 +61,19 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
     - Issue no probe embedding and no provider network call, so a no-change ingest run still reports zero Embedder calls
     - _Requirements: 1.12, 4.2, 8.6, 9.5_
 
-  - [ ]* 2.4 Write configuration unit tests in `tests/test_config_week2.py`
+  - [ ]* 2.4 Write configuration unit tests in `tests/test_config_phase2.py`
     - Cover every default, every boundary of the `Top_K` and `Relevance_Threshold` ranges, the 2/3/63/64-character `Collection_Name` boundaries, the strict-parse rejections (`"5.0"`, `"5e0"`, `"1_0"`), validation ordering, path resolution, and each dimensionality resolution step
     - _Requirements: 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9_
 
-- [ ] 3. Mon–Tue — Week 2 error hierarchy and exit statuses
+- [ ] 3. Mon–Tue — Phase 2 error hierarchy and exit statuses
 
-  - [ ] 3.1 Create `src/askmydocs/errors_week2.py`
-    - Define the Week 2 subtree under Week 1's roots without editing Week 1's `errors.py`: the five `StoreError` subclasses, `DuplicateChunkIdError`, `MetadataValueError`, `ManifestError`, the `IngestError` subtree, the `RetrievalError` subtree, `QuestionSetError`, and the `ReviewError` subtree including `InconsistentTopKError`
-    - Reuse Week 1's `VectorLengthError`, `DegenerateVectorError`, `InvalidKError`, and `GuardrailError` unchanged so the conformance suite can assert one expected type per rule for both stores
+  - [ ] 3.1 Create `src/askmydocs/errors_phase2.py`
+    - Define the Phase 2 subtree under Phase 1's roots without editing Phase 1's `errors.py`: the five `StoreError` subclasses, `DuplicateChunkIdError`, `MetadataValueError`, `ManifestError`, the `IngestError` subtree, the `RetrievalError` subtree, `QuestionSetError`, and the `ReviewError` subtree including `InconsistentTopKError`
+    - Reuse Phase 1's `VectorLengthError`, `DegenerateVectorError`, `InvalidKError`, and `GuardrailError` unchanged so the conformance suite can assert one expected type per rule for both stores
     - Add `DOCUMENTED_RESET_COMMAND` as the single module constant every `StoreError` message and the README quote
     - _Requirements: 2.7, 2.8, 2.9, 2.10, 4.6, 4.8, 7.5, 8.11, 8.13, 8.14, 8.19, 10.7, 10.8, 10.9, 10.10, 14.9, 15.8, 16.7, 16.8, 16.12_
 
-  - [ ]* 3.2 Write error-mapping tests in `tests/test_errors_week2.py`
+  - [ ]* 3.2 Write error-mapping tests in `tests/test_errors_phase2.py`
     - Assert each new type's base class, assert the exit-status mapping for statuses 6 through 11, and assert every `StoreError` message quotes `DOCUMENTED_RESET_COMMAND`
     - _Requirements: 2.7, 2.9, 4.6, 4.8, 7.5, 12.6_
 
@@ -82,7 +82,7 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
   - [ ] 4.1 Create `src/askmydocs/stores/admin.py`
     - `StoredItem` with `insertion_index`, `source_path`, and `state_key(float_places=5)`; `CollectionState`; `StoreAdminInterface` with the five Requirement 3.13 operations plus `iter_items` as the single abstract read primitive and `get_by_ids`, `count_by_source_path`, `collection_state` concrete on the ABC
     - Shared `validate_batch` and `validate_metadata` used by both stores, rejecting non-permitted metadata types by `type(value) in PERMITTED_METADATA_TYPES` and rejecting `nan`/`inf` floats, naming every offending key
-    - Define the `AdminStore` Protocol; leave `stores/base.py` with exactly its three Week 1 operations
+    - Define the `AdminStore` Protocol; leave `stores/base.py` with exactly its three Phase 1 operations
     - _Requirements: 3.13, 3.19, 18.4_
 
   - [ ] 4.2 Create `src/askmydocs/stores/memory_admin.py`
@@ -96,14 +96,14 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
 
 - [ ] 5. Mon–Tue — Chroma version shim, test fixtures, and ChromaStore construction
 
-  - [ ] 5.1 Create `tests/strategies_week2.py`
+  - [ ] 5.1 Create `tests/strategies_phase2.py`
     - `bounded_vector` reaching Requirement 6.3's norm window by rescaling rather than filtering, `chunk_text` capped at 600 characters, `source_path` with non-ASCII characters, `chunk_batch`, `multi_source_batch`, `invalid_batch` tagged by violated rule, `admin_operations`, `corpus`, `corpus_mutation` with the shrink case weighted up, and `label_matrix`
-    - Reuse Week 1's `finite_element`, `vector`, `MIXED_ALPHABET`, and `unicode_text` unchanged; register the `chroma` settings profile
+    - Reuse Phase 1's `finite_element`, `vector`, `MIXED_ALPHABET`, and `unicode_text` unchanged; register the `chroma` settings profile
     - _Requirements: 19.3, 19.4_
 
-  - [ ] 5.2 Add Week 2 fixtures to `tests/conftest.py` and create `tests/fakes_week2.py`
-    - Module-scoped `chroma_store_module` fixture over `tmp_path_factory` with `close()` on teardown, and a per-example `clean_chroma` fixture using `reset()`; set `ANONYMIZED_TELEMETRY=False`; inherit Week 1's autouse no-network, no-key fixture unchanged
-    - Reuse Week 1's `FakeEmbedder`, `ScriptedProvider`, and `SpyEmbedder` without modification; add only `DroppingStore`, which silently discards a write's final record so Requirement 8.19's detection is reachable
+  - [ ] 5.2 Add Phase 2 fixtures to `tests/conftest.py` and create `tests/fakes_phase2.py`
+    - Module-scoped `chroma_store_module` fixture over `tmp_path_factory` with `close()` on teardown, and a per-example `clean_chroma` fixture using `reset()`; set `ANONYMIZED_TELEMETRY=False`; inherit Phase 1's autouse no-network, no-key fixture unchanged
+    - Reuse Phase 1's `FakeEmbedder`, `ScriptedProvider`, and `SpyEmbedder` without modification; add only `DroppingStore`, which silently discards a write's final record so Requirement 8.19's detection is reachable
     - _Requirements: 6.8, 19.5, 19.6, 19.7_
 
   - [ ] 5.3 Create `src/askmydocs/stores/chroma_compat.py`
@@ -137,9 +137,9 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
     - Reconstruct each `Chunk` from the returned document and metadata as a straight field mapping
     - _Requirements: 3.5, 3.6, 3.7, 3.8, 3.20, 4.3, 4.7, 5.5, 12.2_
 
-  - [ ]* 6.3 Write property test for the distance-to-score conversion in `tests/test_store_properties_week2.py`
-    - **Property 1: Chroma's Similarity_Score equals the Week 1 Cosine_Similarity**
-    - At least 100 examples (`chroma` profile); oracle is the unmodified Week 1 `similarity.py`, so this is a cross-implementation comparison; seeded `@example` cases at identical, negated, and orthogonal pairs, a pair whose cosine is exactly 0.5, and dimensionalities 384 and 1536; includes the positive-scalar rescaling clause
+  - [ ]* 6.3 Write property test for the distance-to-score conversion in `tests/test_store_properties_phase2.py`
+    - **Property 1: Chroma's Similarity_Score equals the Phase 1 Cosine_Similarity**
+    - At least 100 examples (`chroma` profile); oracle is the unmodified Phase 1 `similarity.py`, so this is a cross-implementation comparison; seeded `@example` cases at identical, negated, and orthogonal pairs, a pair whose cosine is exactly 0.5, and dimensionalities 384 and 1536; includes the positive-scalar rescaling clause
     - **Validates: Requirements 4.3, 4.4**
     - _Requirements: 4.3, 4.4, 19.3, 19.4_
 
@@ -173,20 +173,20 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
     - **Validates: Requirements 3.4, 3.18**
     - _Requirements: 3.4, 3.18, 19.3_
 
-- [ ] 7. Mon–Tue — Factory branch and Week 1 pipeline isolation
+- [ ] 7. Mon–Tue — Factory branch and Phase 1 pipeline isolation
 
   - [ ] 7.1 Add the `chroma` branch to `src/askmydocs/stores/factory.py`
     - One import swap to `InMemoryAdminStore` and one branch returning `ChromaStore.open(configuration)` for selection `chroma`; keep the `chroma_store` import local to the branch so selecting `memory` works with no `chromadb` installed and `ChromaUnavailableError` has a single raise site
-    - Do not import `chromadb` in this module; this and `config.py` are the only two pre-existing modules Week 2 changes, and both changes are additive
+    - Do not import `chromadb` in this module; this and `config.py` are the only two pre-existing modules Phase 2 changes, and both changes are additive
     - _Requirements: 2.7, 18.3, 18.5_
 
-  - [ ] 7.2 Keep the Week 1 Pipeline_Script on an In_Memory_Store in `scripts/04_pipeline.py`
-    - **No Week 1 frozen module may be edited.** `chunking.py`, `similarity.py`, `loading/base.py`, `loading/pdf_loader.py`, `loading/markdown_loader.py`, `embeddings/*`, and `models.py` stay byte-identical; do not add a `load_bytes` entry point to any loader and add no field to `Chunk`
-    - Because the default store selection is `chroma`, `scripts/04_pipeline.py` must construct `InMemoryStore()` **directly**. If it currently obtains its store from `build_store`, change that one line to a direct construction — scripts are not in the frozen set and the change preserves Week 1 Requirement 11's output exactly
+  - [ ] 7.2 Keep the Phase 1 Pipeline_Script on an In_Memory_Store in `scripts/04_pipeline.py`
+    - **No Phase 1 frozen module may be edited.** `chunking.py`, `similarity.py`, `loading/base.py`, `loading/pdf_loader.py`, `loading/markdown_loader.py`, `embeddings/*`, and `models.py` stay byte-identical; do not add a `load_bytes` entry point to any loader and add no field to `Chunk`
+    - Because the default store selection is `chroma`, `scripts/04_pipeline.py` must construct `InMemoryStore()` **directly**. If it currently obtains its store from `build_store`, change that one line to a direct construction — scripts are not in the frozen set and the change preserves Phase 1 Requirement 11's output exactly
     - _Requirements: 18.1, 18.6, 18.8_
 
-  - [ ]* 7.3 Write factory and pipeline tests in `tests/test_factory_week2.py`
-    - Assert `chroma` returns a `ChromaStore`, `memory` returns a value that is an `InMemoryStore`, selecting `memory` does not import `chromadb`, and the Pipeline_Script populates an in-memory store and produces the Week 1 output under a Week 2 configuration whose selection is `chroma`
+  - [ ]* 7.3 Write factory and pipeline tests in `tests/test_factory_phase2.py`
+    - Assert `chroma` returns a `ChromaStore`, `memory` returns a value that is an `InMemoryStore`, selecting `memory` does not import `chromadb`, and the Pipeline_Script populates an in-memory store and produces the Phase 1 output under a Phase 2 configuration whose selection is `chroma`
     - _Requirements: 18.5, 18.6, 18.10_
 
 - [ ] 8. Checkpoint — both stores construct, write, and query
@@ -196,7 +196,7 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
 
   - [ ] 9.1 Build the conformance harness in `tests/test_store_conformance.py`
     - A parameterized `store` fixture over `InMemoryAdminStore` and `ChromaStore`, so every case runs once per store from the same test code, each Chroma case using its own `tmp_path` `Persist_Directory` removed afterwards and issuing no remote provider request
-    - Example cases pinning messages, validation order, and documented boundaries, each carrying a `@pytest.mark.criteria(...)` marker; a meta-test asserting the union of markers covers the declared criterion list of Week 1 Requirement 10 and Week 2 Requirement 3 and failing with every uncovered criterion; a meta-test asserting the fixture directory is under `tmp_path` and not under the repository
+    - Example cases pinning messages, validation order, and documented boundaries, each carrying a `@pytest.mark.criteria(...)` marker; a meta-test asserting the union of markers covers the declared criterion list of Phase 1 Requirement 10 and Phase 2 Requirement 3 and failing with every uncovered criterion; a meta-test asserting the fixture directory is under `tmp_path` and not under the repository
     - _Requirements: 6.1, 6.2, 6.8, 19.6_
 
   - [ ]* 9.2 Write property test for count and fetchable-id agreement
@@ -252,8 +252,8 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
     - _Requirements: 7.1, 7.8, 7.9_
 
   - [ ] 10.2 Implement `src/askmydocs/ingest/reading.py`
-    - `document_from_bytes(discovered, data, reporter)` building a Week 1 `Document` from bytes already in memory, composing Week 1's public `decode_utf8` and `normalize_newlines` for markdown and constructing `PdfReader(io.BytesIO(data))` for PDFs, joining page text with a single line feed
-    - Edit no Week 1 loader; preserve Week 1's per-file isolation behaviour for unopenable, unparsable, encrypted, oversize, and whitespace-only files
+    - `document_from_bytes(discovered, data, reporter)` building a Phase 1 `Document` from bytes already in memory, composing Phase 1's public `decode_utf8` and `normalize_newlines` for markdown and constructing `PdfReader(io.BytesIO(data))` for PDFs, joining page text with a single line feed
+    - Edit no Phase 1 loader; preserve Phase 1's per-file isolation behaviour for unopenable, unparsable, encrypted, oversize, and whitespace-only files
     - _Requirements: 7.1, 9.7, 18.1, 18.9_
 
   - [ ] 10.3 Implement `src/askmydocs/ingest/manifest.py`
@@ -271,7 +271,7 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
     - _Requirements: 7.2, 7.4, 7.5, 7.6_
 
   - [ ]* 10.6 Write the loader-equivalence test in `tests/test_ingest_examples.py`
-    - For every committed fixture file assert `document_from_bytes(d, path.read_bytes(), r) == foundation_loader.load(d, r)`, so the duplicated PDF logic cannot drift from the frozen Week 1 loader
+    - For every committed fixture file assert `document_from_bytes(d, path.read_bytes(), r) == foundation_loader.load(d, r)`, so the duplicated PDF logic cannot drift from the frozen Phase 1 loader
     - _Requirements: 7.1, 18.1, 18.9_
 
   - [ ]* 10.7 Write property test for the content hash in `tests/test_ingest_properties.py`
@@ -295,7 +295,7 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
 
   - [ ] 11.2 Implement rollback and run reporting in `ingest/runner.py`
     - `rollback` in the fixed order delete items → drop entry → persist manifest, so a crash during rollback lands on the recoverable side; terminate with exit 8 naming the source path, the reason, and the count of sources committed before the failure, leaving committed entries in place; on a mid-run byte change warn, roll that source back, and continue
-    - `IngestReport` printing all twelve counts of Requirement 9.1 plus elapsed seconds to one decimal, the resolved absolute `Persist_Directory`, and the `Collection_Name`; per-batch progress lines; all output through the Week 1 `Reporter` so the API key is redacted
+    - `IngestReport` printing all twelve counts of Requirement 9.1 plus elapsed seconds to one decimal, the resolved absolute `Persist_Directory`, and the `Collection_Name`; per-batch progress lines; all output through the Phase 1 `Reporter` so the API key is redacted
     - _Requirements: 7.11, 8.13, 8.14, 8.19, 9.1, 9.2, 9.3, 9.4, 9.6_
 
   - [ ]* 11.3 Transcribe worked scenarios A–F into `tests/test_ingest_examples.py`
@@ -344,8 +344,8 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
 - [ ] 14. Wed–Thu — Retriever, outcomes, and the relevance threshold
 
   - [ ] 14.1 Define the retrieval models in `src/askmydocs/retrieval/retriever.py`
-    - `RetrievalOutcome` as a closed three-value enum, `ScoredHit` wrapping Week 1's `SearchHit` with `below_threshold`, and `RetrievalResult` carrying hits, outcome, `top_score`, threshold, collection count, and provenance, with `search_hits` and `has_relevant_context`
-    - Add no field to Week 1's `SearchHit` or `Chunk`; depend on `VectorStoreInterface`, never on `chroma_store`
+    - `RetrievalOutcome` as a closed three-value enum, `ScoredHit` wrapping Phase 1's `SearchHit` with `below_threshold`, and `RetrievalResult` carrying hits, outcome, `top_score`, threshold, collection count, and provenance, with `search_hits` and `has_relevant_context`
+    - Add no field to Phase 1's `SearchHit` or `Chunk`; depend on `VectorStoreInterface`, never on `chroma_store`
     - _Requirements: 10.2, 10.11, 11.2, 12.3, 18.1, 18.3, 18.8_
 
   - [ ] 14.2 Implement `retrieve` and `retrieve_with_embedding`
@@ -381,10 +381,10 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
   - [ ] 15.1 Implement `scripts/06_query.py`
     - Thin `main(argv) -> int` taking a positional question and `--top-k`; check `Path.exists()` on the resolved `Persist_Directory` before any store construction and print the path plus the ingest command, exiting 0
     - Print the header block and, per hit, the one-based rank, source path, chunk id, score to four decimals, and chunk text truncated at 200 characters with a marker; print exactly one outcome line whose wording differs across the three cases, with below-threshold hits under their own heading; map each typed error to its exit status and print no result
-    - Route all output through the Week 1 `Reporter` so the API key is redacted
+    - Route all output through the Phase 1 `Reporter` so the API key is redacted
     - _Requirements: 11.4, 11.5, 12.4, 12.5, 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8, 13.9_
 
-  - [ ]* 15.2 Write Query_Script tests in `tests/test_scripts_week2.py`
+  - [ ]* 15.2 Write Query_Script tests in `tests/test_scripts_phase2.py`
     - Missing question usage line and non-zero exit, out-of-range `--top-k`, the three distinct outcome lines, the 200-character truncation marker, the missing-`Persist_Directory` path, and redaction of a planted key
     - _Requirements: 11.4, 11.5, 12.4, 12.5, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8, 13.9_
 
@@ -475,33 +475,33 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
     - Threads inside one process sharing one store and one writer, parameterized at 2, 8, and 16 threads and repeated; size each record above `PIPE_BUF` with five hits of 500 characters each so the case `O_APPEND` alone does not protect is the case exercised; assert exactly one parsable line per completed invocation
     - _Requirements: 14.12, 19.11_
 
-- [ ] 21. Fri — Week 1 isolation and layering verification
+- [ ] 21. Fri — Phase 1 isolation and layering verification
 
   - [ ] 21.1 Create `tests/foundation_baseline.json` and `tests/test_foundation_unmodified.py`
-    - Baseline of CRLF-normalized SHA-256 digests for every frozen module, including `models.py`, generated at the Week 1 completion revision; the test recomputes and fails naming every differing path
+    - Baseline of CRLF-normalized SHA-256 digests for every frozen module, including `models.py`, generated at the Phase 1 completion revision; the test recomputes and fails naming every differing path
     - Add the git cross-check reading each module at the recorded revision via `git show`, skipped with a clear reason when git is unavailable; state in a comment that `config.py` and `stores/factory.py` are deliberately absent from the frozen list, naming Requirements 1.1 and 18.5
     - _Requirements: 18.1, 18.8, 18.9, 18.10_
 
-  - [ ] 21.2 Extend `tests/test_layering_week2.py`
-    - AST-scan the `src/` tree for three rules: no frozen Week 1 module imports `chromadb`, `askmydocs.stores`, `askmydocs.retrieval`, or `askmydocs.ingest`; `chromadb` is imported by exactly one module, counting plain, from, and `importlib.import_module("chromadb")` forms; `retrieval/retriever.py` does not import `chroma_store`
+  - [ ] 21.2 Extend `tests/test_layering_phase2.py`
+    - AST-scan the `src/` tree for three rules: no frozen Phase 1 module imports `chromadb`, `askmydocs.stores`, `askmydocs.retrieval`, or `askmydocs.ingest`; `chromadb` is imported by exactly one module, counting plain, from, and `importlib.import_module("chromadb")` forms; `retrieval/retriever.py` does not import `chroma_store`
     - Fail with every offending module and every offending symbol, not just the first; add the import test covering the `retrieval/logging.py` stdlib shadowing risk
     - _Requirements: 18.2, 18.3, 18.7_
 
 - [ ] 22. Fri — Comparison note and Learning_Notes
 
   - [ ] 22.1 Write `learning-notes/vector-db-comparison.md`
-    - Compare Chroma against at least one of LanceDB and Pinecone across local versus hosted, cost, persistence model, index type, metadata filtering, and operational effort; state per database whether it runs locally without an account and whether it needs an API key; name HNSW where it applies; state how metadata filtering is expressed and which Week 1 `Chunk` metadata fields can be filtered on
+    - Compare Chroma against at least one of LanceDB and Pinecone across local versus hosted, cost, persistence model, index type, metadata filtering, and operational effort; state per database whether it runs locally without an account and whether it needs an API key; name HNSW where it applies; state how metadata filtering is expressed and which Phase 1 `Chunk` metadata fields can be filtered on
     - A section of at least 150 words on how a vector database performs similarity search, covering the shared embedding space, the role of the distance metric, HNSW proximity-graph behaviour as an approximate index, and the latency-versus-recall tradeoff
     - State the selected database and the reason, the condition under which the learner would move to a hosted database, the configured `Distance_Metric`, and the distance-to-score formula; record the path in the README
     - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7, 17.8_
 
-  - [ ] 22.2 Write the Week 2 Learning_Notes sections
+  - [ ] 22.2 Write the Phase 2 Learning_Notes sections
     - The `Distance_Metric`, the conversion formula, and the 1e-5 tolerance at which the conversion is verified against the `Similarity_Calculator`
     - The selected `Relevance_Threshold`, one question that produced no relevant context, one question that scored at or above the threshold, and the reason for the value
     - The mean `Precision_At_K`, the `Top_K` at which the review was performed, the labelled row count, and one observation about a chunk labelled `n` with the reason
     - _Requirements: 4.5, 11.6, 16.11_
 
-  - [ ]* 22.3 Write structural checks for the written artifacts in `tests/test_learning_artifacts_week2.py`
+  - [ ]* 22.3 Write structural checks for the written artifacts in `tests/test_learning_artifacts_phase2.py`
     - Assert the required headings are present, the 150-word and 100-word minimums are met, `HNSW` is named, the conversion formula appears, and a value of K is named; assert structure only, since correctness of the explanations is not machine-checkable
     - _Requirements: 4.5, 11.6, 15.6, 16.11, 17.1, 17.3, 17.5, 17.7_
 
@@ -513,7 +513,7 @@ Two hard constraints apply to the whole plan and are repeated in the tasks they 
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for a faster MVP. Every property, unit, and integration test sub-task is marked optional; every implementation and every written repository artifact is not. The two isolation checks in task 21 are **not** optional, because Requirements 18.7 and 18.9 make them deliverables rather than confidence measures.
-- No Week 1 frozen module may be edited at any point: `chunking.py`, `similarity.py`, `loading/base.py`, `loading/pdf_loader.py`, `loading/markdown_loader.py`, `embeddings/*`, and `models.py` stay byte-identical, and no field is added to `Chunk`. Only `config.py` and `stores/factory.py` change, both additively.
+- No Phase 1 frozen module may be edited at any point: `chunking.py`, `similarity.py`, `loading/base.py`, `loading/pdf_loader.py`, `loading/markdown_loader.py`, `embeddings/*`, and `models.py` stay byte-identical, and no field is added to `Chunk`. Only `config.py` and `stores/factory.py` change, both additively.
 - `scripts/04_pipeline.py` must construct `InMemoryStore()` directly. The default store selection is `chroma`, so routing the Pipeline_Script through `build_store` would break Requirement 18.6.
 - Every property test runs at least 100 generated examples and reports the seed and shrunk input on failure. `chroma`-profile properties run 100; `pure`-profile properties run 200.
 - Each property from the design has exactly one property-based test. Properties 5, 6, 7, 8, 9, 10, 24, and 25 are parameterized over both stores from the same test code, which is Requirement 6.1.

@@ -1,6 +1,6 @@
 ﻿"""The storage seam.
 
-``VectorStoreInterface`` is the single abstraction Week 2 reimplements against
+``VectorStoreInterface`` is the single abstraction Phase 2 reimplements against
 Chroma. It declares exactly the three operations Requirement 10.1 names, so a
 persistent store is a drop-in replacement: no loader, chunker, or embedder
 changes.

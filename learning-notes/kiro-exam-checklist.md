@@ -46,8 +46,8 @@ then. This is separate from the mentor project deadline of Sunday 4 October 2026
 
 | Lesson | Credits | Where it lives | What it does here |
 |---|---|---|---|
-| 1 - Specs | 250 | `.kiro/specs/embeddings-chunking/`, `vector-db-retrieval/`, `generation-citations/` | Three weekly specs, each with requirements in EARS form, a design, and a task list. 48 requirements and 72 correctness properties drove the build. |
-| 2 - Steering | 250 | `.kiro/steering/` | Five files: product, tech, structure, privacy-and-secrets always on, plus testing scoped to `tests/**`. They pin the banned-dependency rule and the frozen-module rule that later weeks must respect. |
+| 1 - Specs | 250 | `.kiro/specs/embeddings-chunking/`, `vector-db-retrieval/`, `generation-citations/` | Three phase specs, each with requirements in EARS form, a design, and a task list. 48 requirements and 72 correctness properties drove the build. |
+| 2 - Steering | 250 | `.kiro/steering/` | Five files: product, tech, structure, privacy-and-secrets always on, plus testing scoped to `tests/**`. They pin the banned-dependency rule and the frozen-module rule that later phases must respect. |
 | 3 - Hooks | 250 | `.kiro/hooks/` | Six hooks: tests after a spec task, tests on source save, a secret and privacy write guard, a frozen-module write guard, re-ingest prompting when a note is added, and a session-start readiness report. |
 | 4 - Property-based testing | 500 | `tests/test_*_properties.py` | Every correctness property in each design maps to a Hypothesis test at 200 examples. Chunk reconstruction, the overlap invariant, cosine bounds and symmetry, store atomicity, and top-K against an independent reference ranking. |
 | 5 - Powers and skills | 500 | `.kiro/skills/`, `powers/ask-my-docs-rag/` | Three skills - tune-retrieval, verify-grounding, explain-pipeline - encoding the judgement calls the project needs. |

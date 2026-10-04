@@ -44,7 +44,7 @@ MAX_WRITE_BATCH: Final = 2000
 
 
 class ChromaStore(VectorStoreInterface):
-    """A persistent collection behind the Week 1 store interface."""
+    """A persistent collection behind the Phase 1 store interface."""
 
     def __init__(
         self,

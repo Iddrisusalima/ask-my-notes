@@ -2,24 +2,24 @@
 
 ## Introduction
 
-Week 1 (Sep 14–20) of the "Ask My Docs" learning project builds the foundation layers of a from-scratch RAG application: embedding generation, document loading, and chunking. No high-level RAG framework is used; every step is implemented manually in Python so the learner understands the mechanics.
+Phase 1 (Sep 14–20) of the "Ask My Docs" learning project builds the foundation layers of a from-scratch RAG application: embedding generation, document loading, and chunking. No high-level RAG framework is used; every step is implemented manually in Python so the learner understands the mechanics.
 
-The deliverable at the end of Week 1 is a runnable pipeline that loads 5–10 personal PDF and markdown notes, splits each document into overlapping fixed-size chunks, embeds every chunk, and holds the chunk text plus vectors in an in-memory store. The in-memory store is deliberately simple, but its interface must be defined so that Week 2 can substitute a persistent vector database (Chroma) without modifying the loader, chunker, or embedder.
+The deliverable at the end of Phase 1 is a runnable pipeline that loads 5–10 personal PDF and markdown notes, splits each document into overlapping fixed-size chunks, embeds every chunk, and holds the chunk text plus vectors in an in-memory store. The in-memory store is deliberately simple, but its interface must be defined so that Phase 2 can substitute a persistent vector database (Chroma) without modifying the loader, chunker, or embedder.
 
-Week 1 also produces two written learning artifacts: an explanation of why documents must be split, and a plain-language explanation of semantic search.
+Phase 1 also produces two written learning artifacts: an explanation of why documents must be split, and a plain-language explanation of semantic search.
 
-Out of scope for Week 1: persistent vector storage, retrieval ranking beyond direct similarity comparison, prompt construction, answer generation, and any user interface.
+Out of scope for Phase 1: persistent vector storage, retrieval ranking beyond direct similarity comparison, prompt construction, answer generation, and any user interface.
 
 ## Glossary
 
-- **Ask_My_Docs**: The overall RAG application being built across three weekly specs. In Week 1 it refers to the collection of scripts and modules produced by this spec.
+- **Ask_My_Docs**: The overall RAG application being built across three phase specs. In Phase 1 it refers to the collection of scripts and modules produced by this spec.
 - **Embedding_Provider**: The configured source of embedding vectors. Exactly one of two implementations: the OpenAI Embeddings API (remote) or a Sentence Transformers model (local).
 - **Embedder**: The Ask_My_Docs component that accepts text and returns an embedding vector by delegating to the selected Embedding_Provider.
 - **Embedding_Vector**: A fixed-length list of floating-point numbers representing the semantic content of a text input.
 - **Embedding_Dimensionality**: The number of elements in an Embedding_Vector produced by the active Embedding_Provider.
 - **Similarity_Calculator**: The Ask_My_Docs component that computes cosine similarity between two Embedding_Vectors.
 - **Cosine_Similarity**: The dot product of two Embedding_Vectors divided by the product of their Euclidean norms, bounded in the closed interval [-1, 1].
-- **Sample_Notes_Folder**: A filesystem directory, default name `sample-notes`, holding the learner's personal PDF and markdown files used as the Week 1 test dataset.
+- **Sample_Notes_Folder**: A filesystem directory, default name `sample-notes`, holding the learner's personal PDF and markdown files used as the Phase 1 test dataset.
 - **Document_Loader**: The Ask_My_Docs component that reads a supported file from the Sample_Notes_Folder and returns its text content plus source metadata.
 - **PDF_Loader**: The Document_Loader implementation for files with a `.pdf` extension.
 - **Markdown_Loader**: The Document_Loader implementation for files with a `.md` or `.markdown` extension.
@@ -33,12 +33,12 @@ Out of scope for Week 1: persistent vector storage, retrieval ranking beyond dir
 - **Max_Input_Length**: The configured maximum input character length accepted by the Embedder for a single text, counted in Unicode code points. Default 8000. Permitted range 1 to 100000.
 - **Max_Batch_Size**: The configured maximum number of texts the Embedder sends in one Embedding_Provider request. Default 64. Permitted range 1 to 2048.
 - **Max_Chunks_Per_Run**: The configured maximum total number of Chunks the Pipeline_Script embeds in a single run. Default 2000.
-- **In_Memory_Store**: The Week 1 storage component that holds Chunk text, Chunk metadata, and the corresponding Embedding_Vectors in process memory.
-- **Vector_Store_Interface**: The abstract contract that In_Memory_Store implements, defining the operations Week 2 will reimplement against Chroma.
+- **In_Memory_Store**: The Phase 1 storage component that holds Chunk text, Chunk metadata, and the corresponding Embedding_Vectors in process memory.
+- **Vector_Store_Interface**: The abstract contract that In_Memory_Store implements, defining the operations Phase 2 will reimplement against Chroma.
 - **Configuration**: The set of runtime settings (provider selection, model name, API key, Sample_Notes_Folder path, Chunk_Size, Chunk_Overlap, Request_Timeout, Max_Retry_Attempts, Max_Input_Length, Max_Batch_Size, Max_Chunks_Per_Run) read from environment variables with documented defaults.
 - **Comparison_Script**: The runnable script that embeds three mutually similar sentences and three unrelated sentences and reports their pairwise Cosine_Similarity values.
-- **Pipeline_Script**: The runnable script that performs the Week 1 wrap-up: load, chunk, embed, and populate the In_Memory_Store.
-- **Learning_Notes**: The written markdown artifacts produced in Week 1, covering why splitting matters and what semantic search is.
+- **Pipeline_Script**: The runnable script that performs the Phase 1 wrap-up: load, chunk, embed, and populate the In_Memory_Store.
+- **Learning_Notes**: The written markdown artifacts produced in Phase 1, covering why splitting matters and what semantic search is.
 
 ## Requirements
 
@@ -193,7 +193,7 @@ Out of scope for Week 1: persistent vector storage, retrieval ranking beyond dir
 
 ### Requirement 10: In-Memory Chunk and Vector Store
 
-**User Story:** As a learner, I want chunk text and its embedding held together in memory behind a small interface, so that Week 2 can replace the storage with Chroma without touching my loaders, chunker, or embedder.
+**User Story:** As a learner, I want chunk text and its embedding held together in memory behind a small interface, so that Phase 2 can replace the storage with Chroma without touching my loaders, chunker, or embedder.
 
 #### Acceptance Criteria
 
@@ -213,9 +213,9 @@ Out of scope for Week 1: persistent vector storage, retrieval ranking beyond dir
 14. IF a query supplies an Embedding_Vector whose length differs from the length established by the first completed non-empty add operation, or whose Euclidean norm is at most 1e-12, THEN THE In_Memory_Store SHALL raise an error naming the violated property and reporting both lengths when the lengths differ.
 15. WHEN two or more stored Chunks have identical Cosine_Similarity values to the query Embedding_Vector, THE In_Memory_Store SHALL order those Chunks among themselves by ascending insertion index.
 
-### Requirement 11: Week 1 End-to-End Pipeline
+### Requirement 11: Phase 1 End-to-End Pipeline
 
-**User Story:** As a learner, I want one script that loads, chunks, and embeds all my notes into the in-memory store, so that I have a working foundation to build retrieval on in Week 2.
+**User Story:** As a learner, I want one script that loads, chunks, and embeds all my notes into the in-memory store, so that I have a working foundation to build retrieval on in Phase 2.
 
 #### Acceptance Criteria
 
@@ -240,18 +240,18 @@ Out of scope for Week 1: persistent vector storage, retrieval ranking beyond dir
 2. THE Learning_Notes SHALL contain a section, under its own markdown heading, explaining semantic search in 3 to 4 sentences that contain no formulas, no mathematical operators, and no variable symbols.
 3. THE Learning_Notes SHALL record the selected Embedding_Provider, the selected model name, the Embedding_Dimensionality, and the reason for the selection.
 4. THE Learning_Notes SHALL record the within-group mean and cross-group mean Cosine_Similarity values printed by the Comparison_Script, each to at least 4 decimal places, together with the 6 sentences used.
-5. THE Learning_Notes SHALL record the chosen Chunk_Size and Chunk_Overlap for the Week 1 wrap-up and the reason for the choice.
+5. THE Learning_Notes SHALL record the chosen Chunk_Size and Chunk_Overlap for the Phase 1 wrap-up and the reason for the choice.
 6. THE Ask_My_Docs repository SHALL contain the Learning_Notes as one or more markdown files under version control at a location stated in the README, and the README SHALL name the file containing each section required by this requirement.
 
 ### Requirement 13: Project Setup and Reproducibility
 
-**User Story:** As a learner, I want a clean Python project with pinned dependencies and a test suite, so that the Week 1 code runs the same way tomorrow and the properties above stay verified.
+**User Story:** As a learner, I want a clean Python project with pinned dependencies and a test suite, so that the Phase 1 code runs the same way tomorrow and the properties above stay verified.
 
 #### Acceptance Criteria
 
 1. THE Ask_My_Docs repository SHALL contain a dependency manifest that pins an exact version for every direct dependency and that states the supported Python version range of 3.10 through 3.12.
 2. THE Ask_My_Docs repository SHALL exclude from the dependency manifest every dependency that supplies pre-built document loading, chunking, retrieval, or prompt-orchestration pipelines.
-3. THE Ask_My_Docs repository SHALL contain a README file stating the setup commands, the environment variables, and the command to run each Week 1 script.
+3. THE Ask_My_Docs repository SHALL contain a README file stating the setup commands, the environment variables, and the command to run each Phase 1 script.
 4. THE Ask_My_Docs repository SHALL contain a test suite that is runnable with a single command stated in the README and that contains at least one test for each acceptance criterion of Requirements 4, 8, and 10.
 5. WHERE a test requires Embedding_Vectors, THE test suite SHALL use a substitute Embedder that returns vectors of a fixed Embedding_Dimensionality, returns identical vectors for identical input text on every invocation, and issues no request to a remote Embedding_Provider.
 6. WHEN the test suite is run with no API key present in the environment, THE test suite SHALL complete with a success status and SHALL issue no network request to any Embedding_Provider.

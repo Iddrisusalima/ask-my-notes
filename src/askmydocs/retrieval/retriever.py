@@ -1,7 +1,7 @@
 ﻿"""Retrieval: embed the question, rank, threshold, log.
 
 The threshold decision produces one of three outcomes, as a closed enum rather
-than a boolean. Week 3 keys its refusal logic off this, and a boolean could not
+than a boolean. Phase 3 keys its refusal logic off this, and a boolean could not
 distinguish "the notes hold nothing relevant" from "there is nothing indexed at
 all" -- two situations that need different advice to the user.
 

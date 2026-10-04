@@ -2,15 +2,15 @@
 
 ## Overview
 
-Week 3 closes the loop. Weeks 1 and 2 built everything up to and including a ranked, thresholded
-`RetrievalResult`; Week 3 turns that value into a cited answer or an honest refusal, and adds nothing
+Phase 3 closes the loop. Phases 1 and 2 built everything up to and including a ranked, thresholded
+`RetrievalResult`; Phase 3 turns that value into a cited answer or an honest refusal, and adds nothing
 at all to the storage or retrieval layer. The new work is four small, pure-ish components in a new
 `generation/` package, one append-only log writer, one evaluation module, and two thin scripts.
 
-The shape of the week is deliberately narrow:
+The shape of this phase is deliberately narrow:
 
 - **No new third-party dependency beyond the chat call.** `openai` is already pinned for the
-  embeddings path (Week 1); Week 3 uses its chat completions endpoint and nothing else. No
+  embeddings path (Phase 1); Phase 3 uses its chat completions endpoint and nothing else. No
   orchestration framework, no prompt library, no template engine â€” the prompt is string
   concatenation over a frozen literal (Requirement 16.3).
 - **Everything except the HTTP call is a pure function.** `PromptBuilder`, `CitationValidator`, and
@@ -23,7 +23,7 @@ The shape of the week is deliberately narrow:
 
 ### Design goals
 
-1. **The retrieval seam holds in the other direction too.** Week 2 promised that Week 3 would read
+1. **The retrieval seam holds in the other direction too.** Phase 2 promised that Phase 3 would read
    `RetrievalResult.outcome` and its `ScoredHit` sequence and nothing else. This design makes that
    checkable: no module under `generation/` imports `askmydocs.stores` or `chromadb`, enforced by an
    import-graph test (Requirement 2.8, 16.5).
@@ -39,18 +39,18 @@ The shape of the week is deliberately narrow:
    function, `answer_question`, so Requirement 11.1's "the same path the Ask_Script uses" is a fact
    about the call graph rather than a promise in prose.
 6. **Offline and fast.** Every test injects a `FakeChatModel`; the suite adds no network call and no
-   real sleep. Week 1 + Week 2 + Week 3 stays inside the existing 300-second budget.
+   real sleep. Phase 1 + Phase 2 + Phase 3 stays inside the existing 300-second budget.
 
 ### Key design decisions
 
 | Decision | Rationale |
 |---|---|
-| A `generation/` **package**, not the two flat modules `prompting.py` / `generation.py` the Week 1 design sketched | Week 3 has six distinct concerns (prompt, chat transport, generation policy, citation validation, presentation, logging). Six modules in a package keep each one testable in isolation and match how Week 2 grouped `retrieval/` and `ingest/`. The Week 1 note is a forecast, not a frozen interface. |
-| `generation/chat_client.py` holds the only `openai` chat import | Mirrors the Week 1 rule that `openai_provider.py` is the only module touching the embeddings client. It is what lets `AnswerGenerator` â€” which owns the retry decision, the malformed-output check, and the `Token_Usage` normalization â€” be tested end to end against a fake (Requirement 4.8). |
+| A `generation/` **package**, not the two flat modules `prompting.py` / `generation.py` the Phase 1 design sketched | Phase 3 has six distinct concerns (prompt, chat transport, generation policy, citation validation, presentation, logging). Six modules in a package keep each one testable in isolation and match how Phase 2 grouped `retrieval/` and `ingest/`. The Phase 1 note is a forecast, not a frozen interface. |
+| `generation/chat_client.py` holds the only `openai` chat import | Mirrors the Phase 1 rule that `openai_provider.py` is the only module touching the embeddings client. It is what lets `AnswerGenerator` â€” which owns the retry decision, the malformed-output check, and the `Token_Usage` normalization â€” be tested end to end against a fake (Requirement 4.8). |
 | `Chat_Provider` is a setting of its own, independent of `Embedding_Provider` | Requirement 1.7 permits every combination of the two, and Requirement 4.1 targets the `Chat_Provider`. So the default install â€” local `sentence-transformers` embeddings plus the `openai` `Chat_Provider` â€” is the expected configuration, not a misconfiguration. `build_chat_client` selects on the `Chat_Provider` alone and never inspects the `Embedding_Provider`. |
 | `generation/pipeline.py::answer_question` is the single orchestration entry point | Requirement 11.1 requires the evaluation run to take the same path as the `Ask_Script`. One function, two call sites. |
-| `evaluation/answer_eval.py`, not `evaluation/week3_eval.py` | Week 2 named its evaluation modules by function (`question_set.py`, `topk.py`, `review.py`). Week numbers in module names age badly and tell a future reader nothing about what the module does. Same content, better name; `week3_eval.py` was the requested name and is recorded here as the rejected alternative. |
-| `errors_week3.py` at package root | Follows the `errors_week2.py` convention exactly: a new subtree, re-exported into the existing root, with `errors.py` itself untouched. |
+| `evaluation/answer_eval.py`, not `evaluation/phase3_eval.py` | Phase 2 named its evaluation modules by function (`question_set.py`, `topk.py`, `review.py`). Phase numbers in module names age badly and tell a future reader nothing about what the module does. Same content, better name; `phase3_eval.py` was the requested name and is recorded here as the rejected alternative. |
+| `errors_phase3.py` at package root | Follows the `errors_phase2.py` convention exactly: a new subtree, re-exported into the existing root, with `errors.py` itself untouched. |
 | `CitationEntry` carries **no** chunk text | The `Citation_Table` needs only path, index, offsets, and score (Requirement 2.7), and `CitationEntry` values are written into the `Answer_Log`. Leaving text out makes "the log holds no verbatim note text beyond the answer itself" true by construction rather than by care. `AssembledPrompt.supplied_chunks` carries the `Chunk` values for anything that needs text. |
 | `temperature=0.0` on the chat call | Requirement 2.6 constrains the *prompt* to be deterministic, not the answer â€” the endpoint offers no determinism guarantee. Temperature 0 is the closest available approximation and keeps two evaluation runs comparable. This design does not claim reproducible answers, and the `Prompt_Hash` exists precisely so a reader can tell "same prompt, different answer" from "different prompt". |
 | `Token_Usage.total` is **recomputed**, never trusted | Requirement 4.7 makes `total == prompt + completion` an invariant of the type. Deriving it in `__post_init__` makes the invariant unbreakable instead of dependent on what a provider reported. |
@@ -66,7 +66,7 @@ The shape of the week is deliberately narrow:
   Both of those nullable fields are exactly what Requirements 4.6 and 12.6 legislate for, so the
   design treats "absent usage" and "null content" as normal shapes to handle rather than as
   surprises. *Content was rephrased for compliance with licensing restrictions.*
-- **`timeout` is a per-request client argument**, the same one the Week 1 `OpenAI_Embedder` passes,
+- **`timeout` is a per-request client argument**, the same one the Phase 1 `OpenAI_Embedder` passes,
   which is why Requirement 4.2's "apply the Request_Timeout" needs no new machinery â€” it is one
   keyword on the `create` call and the client raises its own timeout exception when it elapses.
 - **Python's `\d` is Unicode-aware.** `re.compile(r"\[(\d)\]")` matches `[Ù£]` (Arabic-Indic digit
@@ -74,10 +74,10 @@ The shape of the week is deliberately narrow:
   ASCII class `[0-9]`, so a non-ASCII digit run is not a marker at all. This is a real bug avoided,
   not a hypothetical.
 - **Hypothesis `@settings(max_examples=...)`** is per-test and composes with the project's existing
-  profile, so the 100-example floor Week 3's properties require is set per property test without
-  touching the Week 2 profiles.
+  profile, so the 100-example floor Phase 3's properties require is set per property test without
+  touching the Phase 2 profiles.
 
-### Out of scope for Week 3
+### Out of scope for Phase 3
 
 Streaming responses, multi-turn memory, re-ranking, query rewriting, answer caching, a web or
 graphical interface, any change to chunking or to the vector store, and any automated judgement of
@@ -91,20 +91,20 @@ answer quality â€” `Quality_Rating` is hand-entered by the learner, by desi
 
 **Frozen, byte-identical** (Requirement 16.5, and the workspace's frozen-module rule): `chunking.py`,
 `similarity.py`, `models.py`, `loading/base.py`, `loading/pdf_loader.py`,
-`loading/markdown_loader.py`, and everything under `embeddings/`. Week 3 *imports* from
+`loading/markdown_loader.py`, and everything under `embeddings/`. Phase 3 *imports* from
 `embeddings/retry.py` â€” `RetryPolicy`, `classify_failure`, `FailureKind` â€” and adds nothing to it.
-`tests/test_foundation_unmodified.py` (Week 2, Requirement 18.9) already content-checks the frozen set and
-is extended with the Week 2 retrieval and store modules for Week 3's run.
+`tests/test_foundation_unmodified.py` (Phase 2, Requirement 18.9) already content-checks the frozen set and
+is extended with the Phase 2 retrieval and store modules for Phase 3's run.
 
 **Changed, additively, once each:**
 
 | Module | Change | Why |
 |---|---|---|
-| `config.py` | one new frozen settings dataclass `GenerationSettings`, one new `Configuration` field with a default, one new validation phase appended after the Week 2 phase | Requirement 1.1 names six new settings; Requirement 1.2 requires every Week 1 and Week 2 name, value, and validation to be unchanged. A new field with a default leaves every existing construction site valid. |
-| `stores/factory.py` | **no change** | Week 3 adds no store. The requirement text permits a change here; the design does not need one, and says so rather than making a gratuitous edit. |
+| `config.py` | one new frozen settings dataclass `GenerationSettings`, one new `Configuration` field with a default, one new validation phase appended after the Phase 2 phase | Requirement 1.1 names six new settings; Requirement 1.2 requires every Phase 1 and Phase 2 name, value, and validation to be unchanged. A new field with a default leaves every existing construction site valid. |
+| `stores/factory.py` | **no change** | Phase 3 adds no store. The requirement text permits a change here; the design does not need one, and says so rather than making a gratuitous edit. |
 | `.env.example`, `README.md`, `.gitignore`, `pyproject.toml` | documentation and pins | Requirements 1.8, 10.7, 13.x, 16.2, 16.3 |
 
-Everything else in Week 3 is a new file.
+Everything else in Phase 3 is a new file.
 
 ### Configuration extension, in full
 
@@ -113,7 +113,7 @@ Everything else in Week 3 is a new file.
 
 CONTEXT_BUDGET_MIN: Final = 1000          # Req 1.4
 CONTEXT_BUDGET_MAX: Final = 200000        # Req 1.4
-SUPPORTED_CHAT_PROVIDERS: Final = ("openai",)   # Week 3 supports exactly one  (Req 1.3)
+SUPPORTED_CHAT_PROVIDERS: Final = ("openai",)   # Phase 3 supports exactly one  (Req 1.3)
 
 
 @dataclass(frozen=True)
@@ -140,12 +140,12 @@ class GenerationSettings:
 
 @dataclass(frozen=True)
 class Configuration:
-    # ... every Week 1 field, unchanged, in its original order ...
-    # ... the Week 2 fields `store` and `retrieval`, unchanged ...
+    # ... every Phase 1 field, unchanged, in its original order ...
+    # ... the Phase 2 fields `store` and `retrieval`, unchanged ...
     generation: GenerationSettings = field(default_factory=GenerationSettings)
 ```
 
-The environment variable names follow the Week 1 and Week 2 convention â€” `ASKMYDOCS_` plus the
+The environment variable names follow the Phase 1 and Phase 2 convention â€” `ASKMYDOCS_` plus the
 screaming-snake setting name â€” and land in `.env.example` and the README (Requirement 1.8):
 
 | Setting | Variable | Default | Validation |
@@ -157,36 +157,36 @@ screaming-snake setting name â€” and land in `.env.example` and the README 
 | `Evaluation_Question_Set` | `ASKMYDOCS_EVALUATION_QUESTION_SET` | `question-sets/evaluation-questions.txt` | as above (Req 1.6) |
 | `Evaluation_Report` | `ASKMYDOCS_EVALUATION_REPORT` | `reports/evaluation.md` | as above (Req 1.6) |
 
-Four notes. `Chat_Provider` is validated independently of `ASKMYDOCS_PROVIDER`, the Week 1
+Four notes. `Chat_Provider` is validated independently of `ASKMYDOCS_PROVIDER`, the Phase 1
 `Embedding_Provider` setting: the two are separate settings and **every combination of them is
 permitted** (Requirement 1.7), so the resolved `Chat_Provider` is normalized (`strip()`, then
 `lower()`) and checked against `SUPPORTED_CHAT_PROVIDERS` without any reference to the embedding
-provider. `Context_Budget` parsing is strict in the Week 1 sense: `"12000 "` is accepted after
+provider. `Context_Budget` parsing is strict in the Phase 1 sense: `"12000 "` is accepted after
 trimming, `"12000.0"`, `"1.2e4"`, and `"12_000"` are rejected, and `True` is rejected explicitly
-because `bool` is an `int` in Python. Path resolution reuses the Week 2 repository-root anchor
+because `bool` is an `int` in Python. Path resolution reuses the Phase 2 repository-root anchor
 (`Path(__file__).resolve().parents[2]`) so nothing depends on the process working directory. The two
 evaluation sidecar paths are **derived properties, not settings**, which keeps Requirement 1.1's list
 of exactly six new settings exact â€” a reader of `.env.example` sees six new variables, not eight.
 
-**The one new credential requirement Week 3 introduces.** The default configuration is now local
+**The one new credential requirement Phase 3 introduces.** The default configuration is now local
 embeddings plus a remote chat model: `ASKMYDOCS_PROVIDER` defaults to `sentence-transformers`, which
 runs offline and needs no credential, while `ASKMYDOCS_CHAT_PROVIDER` defaults to `openai`, which
-does. So a default install that ran Week 1 and Week 2 with no `OPENAI_API_KEY` at all **needs
-`OPENAI_API_KEY` set for Week 3**, and that is the only new credential this week adds. The absence is
+does. So a default install that ran Phase 1 and Phase 2 with no `OPENAI_API_KEY` at all **needs
+`OPENAI_API_KEY` set for Phase 3**, and that is the only new credential this phase adds. The absence is
 not a configuration-parse error â€” the `Configuration` resolves fine without a key â€” it is caught at
 wiring time by `build_chat_client` before any request is issued (Requirements 4.4, 12.4). The README
-and `.env.example` both say this in as many words, because "it worked last week" is exactly the
+and `.env.example` both say this in as many words, because "it worked before" is exactly the
 expectation this change breaks.
 
-### Repository layout â€” Week 3 delta
+### Repository layout â€” Phase 3 delta
 
-Unchanged Week 1 and Week 2 files are elided; every line below is new unless marked.
+Unchanged Phase 1 and Phase 2 files are elided; every line below is new unless marked.
 
 ```
 RAG/
-â”œâ”€â”€ pyproject.toml                     # CHANGED: openai pin already present; hypothesis profile "week3"
+â”œâ”€â”€ pyproject.toml                     # CHANGED: openai pin already present; hypothesis profile "phase3"
 â”œâ”€â”€ README.md                          # CHANGED: Req 1.8, 13.1-13.8 (incl. the exit-status table)
-â”œâ”€â”€ .env.example                       # CHANGED: Req 1.8 â€” six Week 3 variables + defaults + range
+â”œâ”€â”€ .env.example                       # CHANGED: Req 1.8 â€” six Phase 3 variables + defaults + range
 â”œâ”€â”€ .gitignore                         # CHANGED: logs/answers.jsonl, reports/evaluation*  (Req 10.7, 16.2)
 â”œâ”€â”€ question-sets/
 â”‚   â””â”€â”€ evaluation-questions.txt            # Evaluation_Question_Set, >= 10 lines, >= 1 negative  (Req 5.3, 11.6)
@@ -206,7 +206,7 @@ RAG/
 â”‚   â””â”€â”€ 10_evaluate.py                 # Evaluation_Script, generate + score subcommands (Req 11)
 â”œâ”€â”€ src/askmydocs/
 â”‚   â”œâ”€â”€ config.py                      # CHANGED (additive): GenerationSettings          (Req 1)
-â”‚   â”œâ”€â”€ errors_week3.py                # Week 3 exception subtree under AskMyDocsError   (Req 12.8)
+â”‚   â”œâ”€â”€ errors_phase3.py                # Phase 3 exception subtree under AskMyDocsError   (Req 12.8)
 â”‚   â”œâ”€â”€ generation/
 â”‚   â”‚   â”œâ”€â”€ __init__.py
 â”‚   â”‚   â”œâ”€â”€ prompting.py               # PromptBuilder, AssembledPrompt, CitationTable, CitationEntry,
@@ -222,9 +222,9 @@ RAG/
 â”‚       â””â”€â”€ answer_eval.py             # generate mode, score mode, Configuration_Stamp,
 â”‚                                      #   rating validation, Mean_Quality_Rating         (Req 11)
 â””â”€â”€ tests/
-    â”œâ”€â”€ fakes_week3.py                 # FakeChatModel, scripted answers, FailingChatModel
-    â”œâ”€â”€ strategies_week3.py            # Hypothesis strategies: chunks, hits, results, answers
-    â”œâ”€â”€ test_config_week3.py           # Req 1
+    â”œâ”€â”€ fakes_phase3.py                 # FakeChatModel, scripted answers, FailingChatModel
+    â”œâ”€â”€ strategies_phase3.py            # Hypothesis strategies: chunks, hits, results, answers
+    â”œâ”€â”€ test_config_phase3.py           # Req 1
     â”œâ”€â”€ test_prompting_examples.py     # System_Prompt pin, Context_Block layout, worked examples A-B (Req 2, 3)
     â”œâ”€â”€ test_prompting_properties.py   # Properties 2, 3, 4, 5, 9                        (Req 2, 3)
     â”œâ”€â”€ test_generator.py              # Req 4, 12.3, 12.6 â€” retry, timeout, malformed, usage
@@ -233,26 +233,26 @@ RAG/
     â”œâ”€â”€ test_presenter.py              # Req 6.1, 6.6, 8.4-8.6
     â”œâ”€â”€ test_answer_log.py             # Req 10 + Properties 10, 11
     â”œâ”€â”€ test_pipeline.py               # Req 8, 9 + Property 5 (refusal biconditional)
-    â”œâ”€â”€ test_redaction_week3.py        # Property 13 â€” key absent from prompt, log, every message
+    â”œâ”€â”€ test_redaction_phase3.py        # Property 13 â€” key absent from prompt, log, every message
     â”œâ”€â”€ test_answer_eval.py            # Req 11, Property 14
-    â”œâ”€â”€ test_layering_week3.py         # Req 2.8, 16.5 â€” generation/ imports no store, no chromadb
-    â”œâ”€â”€ test_frozen_modules_week3.py   # Req 4.8, 16.5 â€” content check of Week 1 + Week 2 frozen set
-    â”œâ”€â”€ test_scripts_week3.py          # Req 9, 11, 12 script-level behaviour and exit statuses
-    â””â”€â”€ test_docs_week3.py             # Req 1.8, 12.9, 13.x â€” the Readme renders the exit-status table
+    â”œâ”€â”€ test_layering_phase3.py         # Req 2.8, 16.5 â€” generation/ imports no store, no chromadb
+    â”œâ”€â”€ test_frozen_modules_phase3.py   # Req 4.8, 16.5 â€” content check of Phase 1 + Phase 2 frozen set
+    â”œâ”€â”€ test_scripts_phase3.py          # Req 9, 11, 12 script-level behaviour and exit statuses
+    â””â”€â”€ test_docs_phase3.py             # Req 1.8, 12.9, 13.x â€” the Readme renders the exit-status table
 ```
 
-Two layout notes. `answer_log.py` rather than `generation/logging.py`, so Week 3 does not repeat the
-stdlib-shadowing caveat Week 2 had to write down for `retrieval/logging.py`. `docs/example-answer.png`
+Two layout notes. `answer_log.py` rather than `generation/logging.py`, so Phase 3 does not repeat the
+stdlib-shadowing caveat Phase 2 had to write down for `retrieval/logging.py`. `docs/example-answer.png`
 is a new top-level directory holding one committed image; putting a binary in `reports/` would
 collide with the `.gitignore` glob that excludes the generated evaluation artifacts.
 
-### Week 3 answer flow
+### Phase 3 answer flow
 
 ```mermaid
 flowchart TD
     Q["question string<br/>(Ask_Script argv or Evaluation_Question_Set line)"] --> V{"question empty<br/>after strip?"}
     V -- yes --> UE["EmptyQuestionError<br/>exit 12 (Req 9.4)"]
-    V -- no --> R["Retriever.retrieve(question, top_k)<br/>Week 2, unchanged â€” writes its own Retrieval_Log (Req 9.5)"]
+    V -- no --> R["Retriever.retrieve(question, top_k)<br/>Phase 2, unchanged â€” writes its own Retrieval_Log (Req 9.5)"]
     R --> O{"RetrievalResult.outcome"}
 
     O -- "NO_RELEVANT_CONTEXT" --> RF1["Refusal(no-relevant-context)<br/>print top_score + Relevance_Threshold (Req 8.1, 8.4)"]
@@ -297,11 +297,11 @@ inherit Requirement 3.1 without repeating it. And the **log append is the last s
 including the malformed-output branch**, which is what makes Requirement 12.6's "SHALL write one
 Answer_Log_Record recording the condition" true without a guard at each raise site.
 
-### Module dependencies added in Week 3
+### Module dependencies added in Phase 3
 
 ```mermaid
 flowchart LR
-    subgraph frozen["Week 1 â€” frozen"]
+    subgraph frozen["Phase 1 â€” frozen"]
         models["models.py<br/>Chunk, SearchHit"]
         retry["embeddings/retry.py<br/>RetryPolicy, classify_failure"]
         sim["similarity.py"]
@@ -313,16 +313,16 @@ flowchart LR
         config["config.py<br/>+ GenerationSettings"]
         reporting["reporting.py<br/>Reporter, redact"]
         errors["errors.py"]
-        errors3["errors_week3.py"]
+        errors3["errors_phase3.py"]
     end
 
-    subgraph w2["Week 2 â€” unchanged"]
+    subgraph w2["Phase 2 â€” unchanged"]
         retrieval["retrieval/retriever.py<br/>RetrievalResult, RetrievalOutcome, ScoredHit"]
         qset["evaluation/question_set.py"]
         stores["stores/*<br/>chroma_store.py -> chromadb"]
     end
 
-    subgraph gen["Week 3 â€” generation/"]
+    subgraph gen["Phase 3 â€” generation/"]
         prompting["prompting.py"]
         chatclient["chat_client.py -> openai"]
         generator["generator.py"]
@@ -332,7 +332,7 @@ flowchart LR
         pipeline["pipeline.py"]
     end
 
-    subgraph eval3["Week 3 â€” evaluation/"]
+    subgraph eval3["Phase 3 â€” evaluation/"]
         anseval["answer_eval.py"]
     end
 
@@ -382,7 +382,7 @@ The dashed box is the point: **no arrow runs from `generation/` to `stores/`.** 
 depends on `retrieval/` for three names (`RetrievalResult`, `RetrievalOutcome`, `ScoredHit`), on
 `models` for `Chunk`, and on `config` and `reporting` â€” never on a store type and never on
 `chromadb`. Only the scripts import a store, and only to hand one to the `Retriever`.
-`tests/test_layering_week3.py` walks the AST of every module under `generation/` and fails on any
+`tests/test_layering_phase3.py` walks the AST of every module under `generation/` and fails on any
 `import`/`from` naming `askmydocs.stores` or `chromadb` (Requirements 2.8, 16.5). The same test
 asserts that `prompting.py`, `citations.py`, and `presenter.py` import nothing from
 `generation/chat_client.py` â€” the three pure modules must stay runnable with no client at all.
@@ -489,7 +489,7 @@ nothing is verified.
 
 #### The `Context_Block` layout
 
-For hits `h1..hn` in `RetrievalResult` order (descending score, Week 2's tie-break already applied):
+For hits `h1..hn` in `RetrievalResult` order (descending score, Phase 2's tie-break already applied):
 
 ```
 Context:
@@ -645,7 +645,7 @@ def build_source_list(report: CitationReport,
 #### How `Citation_Numbers` are assigned
 
 The number is the one-based position of the `Supplied_Chunk` in the `Context_Block`, assigned in
-`RetrievalResult` order â€” which is descending `Similarity_Score` with Week 2's insertion-index
+`RetrievalResult` order â€” which is descending `Similarity_Score` with Phase 2's insertion-index
 tie-break already applied (Requirements 2.2, 2.7). `build_citation_table` is the single assignment
 site, it runs after the budget trim, and it enumerates the retained prefix. So `[1]` is always the
 highest-scoring retained chunk and there is never a gap in the sequence `1..n`.
@@ -735,7 +735,7 @@ Sources:
 ### `ChatClient` and `AnswerGenerator` (`generation/chat_client.py`, `generation/generator.py`)
 
 ```python
-# chat_client.py â€” the only module in Week 3 that imports openai
+# chat_client.py â€” the only module in Phase 3 that imports openai
 
 @dataclass(frozen=True)
 class ChatCompletion:
@@ -761,7 +761,7 @@ class OpenAIChatClient:
             messages=[{"role": "system", "content": system_prompt},
                       {"role": "user",   "content": user_prompt}],
             temperature=0.0,
-            timeout=timeout,                       # Req 4.2 â€” same keyword Week 1 uses
+            timeout=timeout,                       # Req 4.2 â€” same keyword Phase 1 uses
         )
         return _adapt(response)                    # tolerant field reads, no validation
 
@@ -794,7 +794,7 @@ class AnswerGenerator:
 truncated sentence mid-word. No `seed`, no `response_format`, no tools: each would be a knob with no
 requirement behind it.
 
-**Reuse of the Week 1 retry machinery, unchanged.** `RetryPolicy.run(operation, description)` and
+**Reuse of the Phase 1 retry machinery, unchanged.** `RetryPolicy.run(operation, description)` and
 `classify_failure(error)` are imported from `embeddings/retry.py`, which stays byte-identical
 (Requirement 4.8). `AnswerGenerator` wraps the single `client.complete(...)` call in
 `self._retry.run(...)`, so `Max_Retry_Attempts`, the 1-to-30-second backoff schedule, and the
@@ -860,9 +860,9 @@ at `ASKMYDOCS_PROVIDER`. The two things that can go wrong are both about the `Ch
 Both checks run before retrieval, so the learner is told the run cannot answer without first waiting
 on an embed and a query. Note that neither condition is reachable through the `Embedding_Provider`:
 a run configured for local embeddings and the `openai` `Chat_Provider` is valid, and the only thing it
-needs that Weeks 1 and 2 did not is `OPENAI_API_KEY`.
+needs that Phases 1 and 2 did not is `OPENAI_API_KEY`.
 
-**Testing retry and timeout with no network.** Three doubles in `tests/fakes_week3.py`, all
+**Testing retry and timeout with no network.** Three doubles in `tests/fakes_phase3.py`, all
 implementing the `ChatClient` protocol:
 
 - `FakeChatModel(scripted_replies)` returns queued `ChatCompletion` values and records every call's
@@ -870,15 +870,15 @@ implementing the `ChatClient` protocol:
   applied" assertion is made without a clock.
 - `FailingChatModel(errors, then=reply)` raises a queued sequence of exceptions before succeeding. For
   the timeout branch it raises the client's own timeout exception type â€” the exact exception the real
-  client raises when its `timeout` argument elapses â€” which is the technique Week 1 already uses and
+  client raises when its `timeout` argument elapses â€” which is the technique Phase 1 already uses and
   documents. The design therefore tests the code it owns (the classification and the retry decision)
   and does not re-test the HTTP client's timer.
 - `RetryPolicy` is constructed with `sleep=lambda _: None` in every test, so the 1-2-4-8-second backoff
   is exercised as *decisions* recorded by a `Fake_Clock`-style spy rather than as elapsed wall time.
   The full retry-exhaustion test for `Max_Retry_Attempts = 3` runs in microseconds.
 
-No test in the Week 3 suite constructs an `OpenAIChatClient`; `test_layering_week3.py` asserts that
-`openai` is imported by `chat_client.py` and by no other Week 3 module, which is what keeps that true.
+No test in the Phase 3 suite constructs an `OpenAIChatClient`; `test_layering_phase3.py` asserts that
+`openai` is imported by `chat_client.py` and by no other Phase 3 module, which is what keeps that true.
 
 ### `presenter` (`generation/presenter.py`)
 
@@ -944,7 +944,7 @@ class AnswerLogWriter:
                 os.close(fd)
 ```
 
-This is the Week 2 `RetrievalLogWriter` structure, deliberately identical: one `O_APPEND` descriptor,
+This is the Phase 2 `RetrievalLogWriter` structure, deliberately identical: one `O_APPEND` descriptor,
 one `os.write` of one fully-formed line, mode `0o600`, a lock around the whole sequence. Reusing the
 shape rather than inventing a second one means the single-line guarantee of Requirement 10.1 rests on
 the same mechanism the learner has already reasoned about, and the two log files behave the same way
@@ -993,11 +993,11 @@ unchanged collection reproduces it.
 `redact(line, api_key)` runs over the **whole serialized line** before the single write. Redacting
 after serialization rather than per field means no field can escape by being added later, which is what
 makes Requirements 10.4 and 12.7 structural rather than a per-field discipline. `redact` replaces the
-key and every substring of it 8 characters or longer with the fixed marker (Week 1).
+key and every substring of it 8 characters or longer with the fixed marker (Phase 1).
 
 **Which key the redaction covers.** Exactly one: `OPENAI_API_KEY`. Both remote paths read that same
-variable â€” the Week 1 `openai` `Embedding_Provider` for embeddings and the Week 3 `openai`
-`Chat_Provider` for chat completions â€” and Week 3 adds no second credential, so there is one secret in
+variable â€” the Phase 1 `openai` `Embedding_Provider` for embeddings and the Phase 3 `openai`
+`Chat_Provider` for chat completions â€” and Phase 3 adds no second credential, so there is one secret in
 the process and one value to redact. The `Reporter` is constructed with that value (the string read
 from `OPENAI_API_KEY`, or `None` when the variable is unset), and the `AnswerLogWriter` is handed the
 same value, so every console line and every log line is swept for it regardless of which provider put
@@ -1078,11 +1078,11 @@ def mean_quality_rating(ratings: Sequence[int]) -> float:
 
 #### Generate mode, then hand rating, then score mode
 
-**Generate.** Load the `Evaluation_Question_Set` through Week 2's `evaluation/question_set.py` â€” the
+**Generate.** Load the `Evaluation_Question_Set` through Phase 2's `evaluation/question_set.py` â€” the
 same loader, unchanged, which already de-duplicates and assigns a `Question_Identifier`. Fail
 immediately when fewer than 10 distinct non-empty lines remain, naming the count and the minimum of 10
 (Requirement 11.6). Then call `answer_question(..., source="evaluate")` once per question, in file
-order, which means every evaluation question also lands in the `Answer_Log` and in the Week 2
+order, which means every evaluation question also lands in the `Answer_Log` and in the Phase 2
 `Retrieval_Log` exactly as an interactive question would. Two files are written:
 
 - `reports/evaluation-run.json` â€” machine-owned, never hand-edited: the `Configuration_Stamp`,
@@ -1095,7 +1095,7 @@ order, which means every evaluation question also lands in the `Answer_Log` and 
 **Why two files rather than one.** Requirement 11.2 puts an empty rating field in generate mode and
 Requirement 11.3 writes the `Evaluation_Report` in score mode, so generate must persist its results
 somewhere that is not the report. Splitting machine-owned data from hand-edited data means a
-mis-typed rating cannot corrupt an answer or a score, and the join key (`question_id`, from the Week 2
+mis-typed rating cannot corrupt an answer or a score, and the join key (`question_id`, from the Phase 2
 `Question_Identifier`) makes a reordered or partially-deleted CSV detectable instead of silently
 mis-aligning ratings with answers. A single hand-edited JSON was rejected as hostile to edit; a single
 CSV was rejected because the `Configuration_Stamp` has no natural home in a row-oriented file. Neither
@@ -1118,7 +1118,7 @@ exactly the kind of hidden stage this project exists to avoid.
 | no recorded outcome is `no_relevant_context` or `empty_collection` | `EvaluationError` stating that the refusal path was not exercised and that the question set needs a `Negative_Grounding_Question` | 11.8, 5.3 |
 | a `question_id` in the run file is missing from the CSV, or vice versa | `EvaluationError` naming the identifier and both files | design addition |
 
-`"3.0"` is rejected rather than truncated, matching the Week 1 strict-integer convention, and `"Ù£"` is
+`"3.0"` is rejected rather than truncated, matching the Phase 1 strict-integer convention, and `"Ù£"` is
 rejected because parsing uses the same ASCII-only discipline as the citation pattern â€” `int("Ù£")`
 succeeds in Python and would silently accept a non-ASCII rating.
 
@@ -1131,18 +1131,18 @@ is precisely the report that hides the failure mode the project is graded on. Th
 question that produced a `Verified_Answer` with at least one `Source_List` entry under the
 `Sample_Notes_Folder` (Requirements 5.1, 5.4). Both are *derived* from the recorded outcomes rather
 than annotated in the question set, which keeps the question set format at one question per line â€”
-unchanged from Week 2 â€” and means the identification cannot disagree with what actually happened.
+unchanged from Phase 2 â€” and means the identification cannot disagree with what actually happened.
 
 #### `Configuration_Stamp` contents
 
 One `setting name -> resolved value` mapping, rendered as a markdown table in the report, holding every
-setting in force for the run that produced the answers (Requirement 11.7): the Week 1 settings
+setting in force for the run that produced the answers (Requirement 11.7): the Phase 1 settings
 (`ASKMYDOCS_PROVIDER`, `ASKMYDOCS_MODEL`, `ASKMYDOCS_NOTES_FOLDER`, `ASKMYDOCS_CHUNK_SIZE`,
 `ASKMYDOCS_CHUNK_OVERLAP`, `ASKMYDOCS_REQUEST_TIMEOUT`, `ASKMYDOCS_MAX_RETRY_ATTEMPTS`,
 `ASKMYDOCS_MAX_INPUT_LENGTH`, `ASKMYDOCS_MAX_BATCH_SIZE`, `ASKMYDOCS_MAX_CHUNKS_PER_RUN`,
-`ASKMYDOCS_EMBEDDING_DIM`), the Week 2 settings (store selection, `Persist_Directory`,
+`ASKMYDOCS_EMBEDDING_DIM`), the Phase 2 settings (store selection, `Persist_Directory`,
 `Collection_Name`, `Distance_Metric`, `Top_K`, `Relevance_Threshold`, `Retrieval_Log`,
-`Source_Manifest`, `Question_Set`), and the six Week 3 settings (`ASKMYDOCS_CHAT_PROVIDER`,
+`Source_Manifest`, `Question_Set`), and the six Phase 3 settings (`ASKMYDOCS_CHAT_PROVIDER`,
 `ASKMYDOCS_CONTEXT_BUDGET`, `ASKMYDOCS_CHAT_MODEL`, `ASKMYDOCS_ANSWER_LOG`,
 `ASKMYDOCS_EVALUATION_QUESTION_SET`, `ASKMYDOCS_EVALUATION_REPORT`). Paths appear as the resolved
 absolute paths, so a reader knows which collection and which notes folder produced the numbers.
@@ -1183,7 +1183,7 @@ question and returns 12 as well (Requirement 9.4) â€” the two share one sta
 condition, "no usable question was supplied", and Requirement 12.9 asks for a distinct status per
 *condition*, not per message.
 
-`scripts/10_evaluate.py` â€” the `Evaluation_Script`, two subcommands mirroring Week 2's
+`scripts/10_evaluate.py` â€” the `Evaluation_Script`, two subcommands mirroring Phase 2's
 `08_relevance_review.py`:
 
 ```
@@ -1195,7 +1195,7 @@ python scripts/10_evaluate.py score
 
 ## Data Models
 
-Every Week 3 model is a frozen dataclass, per the project convention. No Week 1 or Week 2 model gains a
+Every Phase 3 model is a frozen dataclass, per the project convention. No Phase 1 or Phase 2 model gains a
 field (Requirement 16.5); `Chunk`, `SearchHit`, `ScoredHit`, and `RetrievalResult` are read and never
 extended.
 
@@ -1235,7 +1235,7 @@ class AssembledPrompt:
     system_prompt: str                          # always SYSTEM_PROMPT       (Req 2.1, 2.4)
     user_prompt: str                            # Context_Block + question   (Req 2.5)
     citation_table: CitationTable               #                            (Req 2.1, 2.7)
-    supplied_chunks: tuple[Chunk, ...]          # the Week 1 Chunk values, text included
+    supplied_chunks: tuple[Chunk, ...]          # the Phase 1 Chunk values, text included
     dropped_chunk_count: int                    #                            (Req 3.4, 3.7)
     context_budget: int                         # the budget in force, for the notice and the log
 
@@ -1395,7 +1395,7 @@ single test.
 
 @dataclass(frozen=True)
 class EvaluationQuestionResult:
-    question_id: str                   # Week 2 Question_Identifier
+    question_id: str                   # Phase 2 Question_Identifier
     question: str
     outcome: str
     scores: tuple[float, ...]          # every retrieved Similarity_Score  (Req 11.1)
@@ -1433,7 +1433,7 @@ class EvaluationReport:
 system â€” essentially, a formal statement about what the system should do. Properties serve as the
 bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-Week 3's testable surface is unusually well suited to property-based testing: `PromptBuilder`,
+Phase 3's testable surface is unusually well suited to property-based testing: `PromptBuilder`,
 `CitationValidator`, `build_source_list`, `normalize_usage`, `AnswerLogRecord.to_payload`, and
 `mean_quality_rating` are pure functions over structured data, and the two impure components
 (`AnswerGenerator`, `AnswerLogWriter`) are driven entirely through injected doubles. Every property
@@ -1442,7 +1442,7 @@ below runs against in-memory values with no network and no real clock.
 All property tests use Hypothesis, run with `@settings(max_examples=100)` at minimum, and carry a tag
 comment of the form `# Feature: generation-citations, Property N: <property text>`.
 
-### Shared strategies (`tests/strategies_week3.py`)
+### Shared strategies (`tests/strategies_phase3.py`)
 
 ```python
 chunk_texts        = st.text(min_size=1, max_size=600,
@@ -1693,24 +1693,24 @@ two worked budget examples. Requirements 1.8, 2.8, 4.8, 9.6, 10.7, 12.8, 13.x, 1
 
 ## Error Handling
 
-### The Week 3 exception subtree
+### The Phase 3 exception subtree
 
-New types live in `errors_week3.py` and are re-exported into the existing root, exactly as Week 2 did
-with `errors_week2.py`. `errors.py` itself is untouched.
+New types live in `errors_phase3.py` and are re-exported into the existing root, exactly as Phase 2 did
+with `errors_phase2.py`. `errors.py` itself is untouched.
 
 ```
 AskMyDocsError(Exception)                       # errors.py, unchanged
-â”œâ”€â”€ ... Week 1 subtree, unchanged ...
-â”œâ”€â”€ ... Week 2 subtree, unchanged ...
-â”œâ”€â”€ PromptError                                 # Week 3
+â”œâ”€â”€ ... Phase 1 subtree, unchanged ...
+â”œâ”€â”€ ... Phase 2 subtree, unchanged ...
+â”œâ”€â”€ PromptError                                 # Phase 3
 â”‚   â”œâ”€â”€ ContextBudgetError                      # Req 3.6, 12.5
 â”‚   â””â”€â”€ PromptStateError                        # a non-RELEVANT_CONTEXT result reached the builder
-â”œâ”€â”€ GenerationError                             # Week 3
+â”œâ”€â”€ GenerationError                             # Phase 3
 â”‚   â”œâ”€â”€ MissingApiKeyError                      # Req 4.4, 12.4
 â”‚   â”œâ”€â”€ ChatCompletionFailedError               # Req 12.3 â€” after Max_Retry_Attempts
 â”‚   â””â”€â”€ MalformedModelOutputError               # Req 12.6
 â”œâ”€â”€ AnswerLogError                              # Answer_Log unwritable or undecodable
-â””â”€â”€ EvaluationError                             # Week 3
+â””â”€â”€ EvaluationError                             # Phase 3
     â”œâ”€â”€ QuestionCountError                      # Req 11.6
     â”œâ”€â”€ QualityRatingError                      # Req 11.4 â€” a present rating is invalid
     â”œâ”€â”€ NoRatingsError                          # Req 11.5 â€” every rating is empty
@@ -1731,18 +1731,18 @@ types and never calls `sys.exit`; every exit status is chosen by a script (Requi
 The requirements now ask only for a *non-zero* status per error condition (9.3, 9.4, 12.1, 12.3â€“12.6)
 and for those statuses to be **distinct per condition** and listed in the Readme (12.9, 13.8). The
 numbers are therefore the design's to choose, and this is the single table that chooses them. It
-continues the existing ranges rather than starting over: Week 1 owns 0â€“5, Week 2 owns 6â€“11, and Week 3
-takes 12 upward. Both Week 3 scripts read from this one table â€” there is no per-script override.
+continues the existing ranges rather than starting over: Phase 1 owns 0â€“5, Phase 2 owns 6â€“11, and Phase 3
+takes 12 upward. Both Phase 3 scripts read from this one table â€” there is no per-script override.
 
-| Exit status | Condition | Typed exception | Week | Requirements |
+| Exit status | Condition | Typed exception | Phase | Requirements |
 |---|---|---|---|---|
 | 0 | Answer presented (`Verified` or `Unverified`), **or** a `Refusal` presented â€” a refusal is a correct outcome, not a failure | â€” | 1 | 9.7, 12.2 |
 | 1 | Unexpected internal error, including `PromptStateError` (a non-`RELEVANT_CONTEXT` result reached the builder, which is a bug, not a user condition) | any unhandled | 1 | â€” |
-| 2 | Configuration invalid: `Chat_Provider` not `openai` after trimming and lower-casing, `Context_Budget` outside 1000â€“200000, `Chat_Model` empty after trimming, or any Week 1 or Week 2 setting error | `ConfigurationError` | 1 | 1.3, 1.4, 1.5 |
+| 2 | Configuration invalid: `Chat_Provider` not `openai` after trimming and lower-casing, `Context_Budget` outside 1000â€“200000, `Chat_Model` empty after trimming, or any Phase 1 or Phase 2 setting error | `ConfigurationError` | 1 | 1.3, 1.4, 1.5 |
 | 3 | The notes folder holds no supported source file | `NotesFolderError` | 1 | 12.1 |
 | 4 | Guardrail exceeded | `GuardrailError` | 1 | â€” |
 | 5 | Embedding call failed | `EmbeddingError` | 1 | â€” |
-| 6â€“11 | Week 2 conditions, unchanged | `StoreError`, `ManifestError`, `IngestError`, `RetrievalError`, `QuestionSetError`, `ReviewError` | 2 | â€” |
+| 6â€“11 | Phase 2 conditions, unchanged | `StoreError`, `ManifestError`, `IngestError`, `RetrievalError`, `QuestionSetError`, `ReviewError` | 2 | â€” |
 | **12** | No question argument, or a question empty after trimming â€” one condition, "no usable question was supplied" | `UsageError` / `EmptyQuestionError` | 3 | 9.3, 9.4 |
 | **13** | The `Context_Budget` is exceeded by the top hit alone | `ContextBudgetError` | 3 | 3.6, 12.5 |
 | **14** | The `Chat_Provider`'s API key environment variable is absent or empty; no request issued | `MissingApiKeyError` | 3 | 4.4, 12.4 |
@@ -1757,10 +1757,10 @@ takes 12 upward. Both Week 3 scripts read from this one table â€” there is 
 
 Three things this table settles. **Status 0 covers both success and a presented `Refusal`** â€” a
 `no-relevant-context` or `empty-collection` refusal is the tool behaving correctly, so nothing about it
-is a failure exit (Requirements 9.7, 12.2). **Requirement 12.1's condition keeps the Week 1 status 3**,
-because "the notes folder holds no supported source file" is exactly the `NotesFolderError` that Week 1
+is a failure exit (Requirements 9.7, 12.2). **Requirement 12.1's condition keeps the Phase 1 status 3**,
+because "the notes folder holds no supported source file" is exactly the `NotesFolderError` that Phase 1
 already numbered; inventing a second number for the same condition would make the table less coherent,
-not more distinct. **Every other Week 3 error condition gets a number of its own**, so a caller reading
+not more distinct. **Every other Phase 3 error condition gets a number of its own**, so a caller reading
 `$LASTEXITCODE` can tell retry exhaustion (15) from malformed output (16) from a missing key (14)
 without parsing a message â€” which is what Requirement 12.9 is for. `09_ask.py` can return 0, 1, 2, 3,
 12, 13, 14, 15, 16, and 17; `10_evaluate.py` can return any of those plus 18 through 22.
@@ -1771,7 +1771,7 @@ Requirements 12.9 and 13.8 both put the obligation on the Readme to list every e
 condition that produces it. The Readme renders **this table**, verbatim in content: the same statuses,
 the same conditions, in the same order. **This design table is the single source of truth** â€” when a new
 error condition is added, it is numbered here first and the Readme follows, never the other way around.
-`test_docs_week3.py` asserts that every status appearing in the script exit-status mapping also appears
+`test_docs_phase3.py` asserts that every status appearing in the script exit-status mapping also appears
 in the Readme's table, so the two cannot drift silently.
 
 ### Fail fast versus continue, per condition
@@ -1815,10 +1815,10 @@ wiring against fakes. The three kinds are complementary: the properties catch ge
 examples catch wording and status regressions, and the integration tests catch wiring mistakes that hold
 for every input and so are invisible to a property.
 
-Hypothesis is the property-based library, already a pinned dependency from Week 1. No property test is
+Hypothesis is the property-based library, already a pinned dependency from Phase 1. No property test is
 hand-rolled as a loop over random values.
 
-### `FakeChatModel` and the other doubles (`tests/fakes_week3.py`)
+### `FakeChatModel` and the other doubles (`tests/fakes_phase3.py`)
 
 ```python
 @dataclass
@@ -1865,8 +1865,8 @@ The scripted answer library covers every branch the validator and the presenter 
 
 **No network, ever.** No test constructs an `OpenAIChatClient`, no test reads a real
 `OPENAI_API_KEY` (the redaction tests plant a generated fake key in a monkeypatched environment), and
-`test_layering_week3.py` asserts that `openai` is imported by `chat_client.py` alone. Retrieval comes
-from the Week 2 `chroma_store` fixture over a per-test `Persist_Directory` with the Week 1
+`test_layering_phase3.py` asserts that `openai` is imported by `chat_client.py` alone. Retrieval comes
+from the Phase 2 `chroma_store` fixture over a per-test `Persist_Directory` with the Phase 1
 `FakeEmbedder`, or â€” for the pure property tests â€” from directly constructed `RetrievalResult` values
 with no store at all, which is what the layering rule buys.
 
@@ -1898,14 +1898,14 @@ Every property test carries the tag comment
 `@settings(max_examples=100)` at minimum â€” Property 1 uses 200. Each of the fourteen properties is
 implemented as exactly one property-based test function; where a property has several conjuncts, they are
 assertions inside that one test rather than separate tests, so the mapping from design property to test
-stays one to one. A `"week3"` Hypothesis profile sets a per-test deadline of 500 ms and disables the
+stays one to one. A `"phase3"` Hypothesis profile sets a per-test deadline of 500 ms and disables the
 `too_slow` health check for the two properties that build prompts near the 200000 budget ceiling.
 
 ### Test layout and coverage
 
 | File | Kind | Covers |
 |---|---|---|
-| `test_config_week3.py` | examples, edge cases | Req 1.1â€“1.8, the `Context_Budget` boundary set, the `Chat_Provider` rejection, and the local-embeddings-plus-remote-chat combination |
+| `test_config_phase3.py` | examples, edge cases | Req 1.1â€“1.8, the `Context_Budget` boundary set, the `Chat_Provider` rejection, and the local-embeddings-plus-remote-chat combination |
 | `test_prompting_examples.py` | examples | `SYSTEM_PROMPT` length and hash pin, the `Context_Block` layout, worked examples A and B, Req 2.4, 3.6 |
 | `test_prompting_properties.py` | properties | Properties 2, 3, 4, 9 |
 | `test_citations.py` | properties + examples | Properties 1, 6, 7; the marker non-match table |
@@ -1914,20 +1914,20 @@ stays one to one. A `"week3"` Hypothesis profile sets a per-test deadline of 500
 | `test_generator_properties.py` | property | Property 8 |
 | `test_answer_log.py` | properties + examples | Properties 10, 11; Req 10.5, 10.6 |
 | `test_pipeline.py` | property + integration | Property 5; Req 8.x, 9.1, 9.5; the two grounding checks |
-| `test_redaction_week3.py` | property | Property 13 |
+| `test_redaction_phase3.py` | property | Property 13 |
 | `test_answer_eval.py` | properties + examples | Properties 12, 14; Req 11.5, 11.7, 11.8, 5.4 |
-| `test_scripts_week3.py` | examples | Req 9.2, 9.3, 9.4, 9.7, 12.1â€“12.6, 12.9 â€” one case per row of the exit-status table, asserting the exact status and that the statuses are pairwise distinct |
-| `test_layering_week3.py` | static | Req 2.8, 16.5 â€” `generation/` imports no store and no `chromadb`; `openai` only in `chat_client.py`; no `sys.exit` under `src/` |
-| `test_frozen_modules_week3.py` | static | Req 4.8, 16.5 â€” content check of the Week 1 and Week 2 frozen set |
-| `test_docs_week3.py` | smoke | Req 1.8, 10.7, 12.9, 13.x, 14.x, 15.x, 16.2, 16.3 â€” presence checks over `.env.example`, `README.md`, `.gitignore`, `pyproject.toml`, and the learning notes, including the six Week 3 variables and the Readme exit-status table |
+| `test_scripts_phase3.py` | examples | Req 9.2, 9.3, 9.4, 9.7, 12.1â€“12.6, 12.9 â€” one case per row of the exit-status table, asserting the exact status and that the statuses are pairwise distinct |
+| `test_layering_phase3.py` | static | Req 2.8, 16.5 â€” `generation/` imports no store and no `chromadb`; `openai` only in `chat_client.py`; no `sys.exit` under `src/` |
+| `test_frozen_modules_phase3.py` | static | Req 4.8, 16.5 â€” content check of the Phase 1 and Phase 2 frozen set |
+| `test_docs_phase3.py` | smoke | Req 1.8, 10.7, 12.9, 13.x, 14.x, 15.x, 16.2, 16.3 â€” presence checks over `.env.example`, `README.md`, `.gitignore`, `pyproject.toml`, and the learning notes, including the six Phase 3 variables and the Readme exit-status table |
 
 ### Suite time budget
 
-Week 3 adds **under 60 seconds** to the suite, keeping Week 1 + Week 2 + Week 3 inside the existing
+Phase 3 adds **under 60 seconds** to the suite, keeping Phase 1 + Phase 2 + Phase 3 inside the existing
 300-second ceiling. The arithmetic: eleven of the fourteen properties operate on in-memory values with no
 I/O and cost well under a second each at 100 examples; Properties 10, 11, and 13 write to a `tmp_path`
 JSONL file and cost a few seconds each; the retry tests cost microseconds because `sleep` is a no-op; the
 two grounding integration tests each ingest a three-file fixture corpus into a temporary Chroma
 collection, which is the most expensive item at roughly 2â€“3 seconds apiece. The 500 ms per-example
-deadline in the `"week3"` profile is the tripwire: a property that starts doing real I/O per example
+deadline in the `"phase3"` profile is the tripwire: a property that starts doing real I/O per example
 fails on time rather than quietly eating the budget.

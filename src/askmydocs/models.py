@@ -59,7 +59,7 @@ class Chunk:
         """Stable identifier, unique across the corpus.
 
         Unique because Requirement 7.3 makes ``source_path`` unique per document
-        and 8.12 makes ``index`` unique within a document. Week 2 hands these
+        and 8.12 makes ``index`` unique within a document. Phase 2 hands these
         straight to Chroma, which requires caller-supplied ids.
         """
         return f"{self.source_path}#{self.index}"

@@ -1,8 +1,8 @@
-# Implementation Plan: Week 1 — Embeddings, Loading, and Chunking
+# Implementation Plan: Phase 1 — Embeddings, Loading, and Chunking
 
 ## Overview
 
-The plan builds the Week 1 layers bottom-up in Python 3.10–3.12, in the order the dependency
+The plan builds the Phase 1 layers bottom-up in Python 3.10–3.12, in the order the dependency
 graph allows: repository scaffold → errors and models → configuration, reporting, redaction →
 cosine similarity → chunker → discovery → loaders → store interface and `In_Memory_Store` →
 embedder core and providers → the four runnable scripts → the layering guard → written notes and
@@ -15,7 +15,7 @@ runs 200 and the three filesystem-backed properties run 100. No test issues a ne
 the substitute embedder (`tests/fakes.py::FakeEmbedder`) and a session-scoped socket guard make
 that structural rather than aspirational (Requirements 13.5, 13.6).
 
-Build order is dependency-driven, not calendar-driven. The Week 1 day each epic serves is noted
+Build order is dependency-driven, not calendar-driven. The Phase 1 day each epic serves is noted
 on the epic and summarised in the day-mapping section at the end.
 
 ## Tasks
@@ -401,7 +401,7 @@ on the epic and summarised in the day-mapping section at the end.
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 10. Vector store interface and In_Memory_Store
-  - Serves Fri wrap-up, and is the single seam Week 2 replaces with Chroma.
+  - Serves Fri wrap-up, and is the single seam Phase 2 replaces with Chroma.
 
   - [ ] 10.1 Implement `src/askmydocs/stores/base.py`
     - Abstract `VectorStoreInterface` declaring exactly `add(chunks, embeddings)`, `count()`,
@@ -423,7 +423,7 @@ on the epic and summarised in the day-mapping section at the end.
 
   - [ ] 10.3 Implement `src/askmydocs/stores/factory.py`
     - `build_store(configuration)` returning `InMemoryStore`, with the single branch point
-      Week 2 extends
+      Phase 2 extends
     - _Requirements: 10.1, 10.2_
 
   - [ ]* 10.4 Write `tests/test_store_examples.py`
@@ -721,7 +721,7 @@ on the epic and summarised in the day-mapping section at the end.
 - [ ] 16. Final checkpoint — full suite green within the time budget
   - Ensure all tests pass, ask the user if questions arise.
 
-## Week 1 day mapping
+## Phase 1 day mapping
 
 | Day | Goal | Tasks |
 |---|---|---|

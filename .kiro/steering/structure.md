@@ -44,8 +44,8 @@ tests/
 
 `chunking.py`, `similarity.py`, `loading/base.py`, `loading/pdf_loader.py`,
 `loading/markdown_loader.py`, everything under `embeddings/`, and `models.py` are byte-identical
-from the end of Week 1 onward. Extend them by adding a new module or a subclass, never by editing
-them. `config.py` and `stores/factory.py` are the only pre-existing modules later weeks may change,
+from the end of Phase 1 onward. Extend them by adding a new module or a subclass, never by editing
+them. `config.py` and `stores/factory.py` are the only pre-existing modules later phases may change,
 and only additively.
 
 ## Conventions

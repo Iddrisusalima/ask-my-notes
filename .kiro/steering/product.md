@@ -12,13 +12,13 @@ learner can explain it: what an embedding is, why chunk size and overlap matter,
 ranking works, and where an answer's context came from. Reaching for a framework that hides a stage
 defeats the purpose of the project.
 
-## Three-week plan, one spec per week
+## Three-phase plan, one spec per phase
 
-- **Week 1 - `embeddings-chunking`**: embeddings, document loading, chunking, and an
+- **Phase 1 - `embeddings-chunking`**: embeddings, document loading, chunking, and an
   in-memory store behind a store interface.
-- **Week 2 - `vector-db-retrieval`**: a persistent Chroma store, incremental ingest,
+- **Phase 2 - `vector-db-retrieval`**: a persistent Chroma store, incremental ingest,
   retrieval with a relevance threshold, top-K tuning, and retrieval logging.
-- **Week 3 - `generation-citations`**: prompt construction, answer generation, citations,
+- **Phase 3 - `generation-citations`**: prompt construction, answer generation, citations,
   evaluation, README, demo, and submission.
 
 ## Deadline and submission

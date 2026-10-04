@@ -1,4 +1,4 @@
-﻿"""Week 1 end-to-end pipeline: discover, load, chunk, embed, store, query.
+﻿"""Phase 1 end-to-end pipeline: discover, load, chunk, embed, store, query.
 
 A thin shell over library code. Every console string goes through the Reporter,
 and the library raises typed exceptions rather than exiting, so this module owns

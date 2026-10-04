@@ -14,7 +14,7 @@ Required in both the social post and the entry form.
 > and citation validation are all hand-written. It answers only from the chunks it
 > retrieves, cites the exact file and character range behind every claim, and refuses
 > outright when the notes do not cover the question instead of inventing an answer. I
-> built it in Kiro across three weekly specs, with 72 correctness properties driving
+> built it in Kiro across three phase specs, with 72 correctness properties driving
 > property-based tests.
 
 ## Social post - X version
@@ -25,7 +25,7 @@ Required in both the social post and the entry form.
 > It cites the exact file and character range for every claim, and refuses when my notes
 > do not cover the question rather than inventing an answer.
 >
-> Built in Kiro from three weekly specs: steering rules, hooks, scoped custom agents, an
+> Built in Kiro from three phase specs: steering rules, hooks, scoped custom agents, an
 > MCP server, and property-based tests that check chunks always reconstruct the original
 > text exactly.
 >
@@ -47,7 +47,7 @@ Required in both the social post and the entry form.
 > threshold before the model is called at all. An assistant that always answers is
 > useless, because you cannot tell the grounded answers from the invented ones.
 >
-> I built it in Kiro using spec-driven development: three weekly specs with requirements,
+> I built it in Kiro using spec-driven development: three phase specs with requirements,
 > designs, and task lists, steering files pinning the rules every task follows, hooks
 > automating the test runs, three custom agents with deliberately different permissions,
 > an MCP server, and property-based tests covering 72 stated correctness properties.
@@ -61,7 +61,7 @@ Required in both the social post and the entry form.
 
 Paste this into the writeup field.
 
-**Lesson 1, Specs.** Three weekly specs under `.kiro/specs/` - embeddings-chunking,
+**Lesson 1, Specs.** Three phase specs under `.kiro/specs/` - embeddings-chunking,
 vector-db-retrieval, generation-citations - each with requirements in EARS
 form, a design document, and a task list. 48 requirements and 72 correctness properties
 drove every implementation decision.
@@ -69,7 +69,7 @@ drove every implementation decision.
 **Lesson 2, Steering.** Five files in `.kiro/steering/`. product, tech, structure, and
 privacy-and-secrets apply always; testing is scoped to `tests/**` by fileMatch. They pin
 the banned-dependency rule that keeps RAG frameworks out, and the frozen-module rule that
-stops later weeks editing Week 1 code.
+stops later phases editing Phase 1 code.
 
 **Lesson 3, Hooks.** Six hooks in `.kiro/hooks/`: run the suite after a spec task, run it
 on source save, a secret-and-privacy write guard, a frozen-module write guard, re-ingest

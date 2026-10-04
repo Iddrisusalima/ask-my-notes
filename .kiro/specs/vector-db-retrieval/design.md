@@ -2,30 +2,30 @@
 
 ## Overview
 
-Week 2 turns the Week 1 in-process list into a persistent local vector database and builds a retrieval layer on top of it. The shape of the work is deliberately narrow: **one new implementation of an interface that already exists**, plus the machinery that a persistent store makes possible — incremental ingest driven by content hashes, a retriever with a relevance threshold, a machine-readable retrieval log, and two measurement scripts.
+Phase 2 turns the Phase 1 in-process list into a persistent local vector database and builds a retrieval layer on top of it. The shape of the work is deliberately narrow: **one new implementation of an interface that already exists**, plus the machinery that a persistent store makes possible — incremental ingest driven by content hashes, a retriever with a relevance threshold, a machine-readable retrieval log, and two measurement scripts.
 
 Nothing here is a framework. The only new third-party dependency is `chromadb`, pinned to an exact version (Requirement 2.1, 19.1). Chroma is used as a *storage and index primitive only*: it is never asked to embed text, never asked to rank by anything other than the vector we hand it, and never asked to construct a prompt. Distance-to-similarity conversion, insertion ordering, tie-breaking, incremental planning, threshold logic, and precision@K are all code the learner writes and property-tests.
 
 ### Design goals
 
-1. **The Week 1 seam holds.** `Vector_Store_Interface` was designed in Week 1 as the swap point (Week 1 Requirement 10.3). Week 2 proves it: the frozen Week 1 modules — Chunker, Embedder, Document_Loader, PDF_Loader, Markdown_Loader, Similarity_Calculator — are byte-identical at the end of Week 2, verified by an automated content check (Requirement 18.9). Exactly two Week 1 modules change, both additively and both because a requirement explicitly demands it (§ "What changes in Week 1, and what does not").
-2. **Chroma's numbers mean what Week 1's numbers mean.** A `Similarity_Score` from `Chroma_Store` and a `Cosine_Similarity` from `Similarity_Calculator` are the same number to 1e-5, and that equality is a property test, not a claim (Requirements 4.4, 6.4). Everything downstream — the `Relevance_Threshold`, the Top-K report, precision@K — is denominated in that one unit.
+1. **The Phase 1 seam holds.** `Vector_Store_Interface` was designed in Phase 1 as the swap point (Phase 1 Requirement 10.3). Phase 2 proves it: the frozen Phase 1 modules — Chunker, Embedder, Document_Loader, PDF_Loader, Markdown_Loader, Similarity_Calculator — are byte-identical at the end of Phase 2, verified by an automated content check (Requirement 18.9). Exactly two Phase 1 modules change, both additively and both because a requirement explicitly demands it (§ "What changes in Phase 1, and what does not").
+2. **Chroma's numbers mean what Phase 1's numbers mean.** A `Similarity_Score` from `Chroma_Store` and a `Cosine_Similarity` from `Similarity_Calculator` are the same number to 1e-5, and that equality is a property test, not a claim (Requirements 4.4, 6.4). Everything downstream — the `Relevance_Threshold`, the Top-K report, precision@K — is denominated in that one unit.
 3. **Re-running ingest is cheap and safe.** A second run over unchanged notes issues zero Embedder calls, leaves the collection byte-for-byte equivalent, and leaves the manifest byte-identical (Requirement 8.6). A crashed run leaves no half-ingested file claimed as ingested (Requirements 8.12, 8.17).
-4. **Retrieval reports absence, not noise.** The three outcomes — relevant context, no relevant context, empty collection — are a closed enum on the result object, so Week 3 cannot accidentally treat a low-scoring hit as usable context (Requirements 11.1, 12.3).
+4. **Retrieval reports absence, not noise.** The three outcomes — relevant context, no relevant context, empty collection — are a closed enum on the result object, so Phase 3 cannot accidentally treat a low-scoring hit as usable context (Requirements 11.1, 12.3).
 5. **Exactness where it is promised, measurement where it is not.** At or below `Exact_Search_Limit` (1000 stored items) the store returns the true top-K in the true order. Above it, HNSW is approximate and the design measures recall instead of asserting exactness (Requirements 3.5, 3.20, 6.9). The boundary is a named constant, not a footnote.
-6. **Offline, per-test-isolated, fast.** Every Chroma test uses its own `Persist_Directory`, every embedding comes from the Week 1 `FakeEmbedder`, and the whole suite — Week 1 plus Week 2 — stays under 300 seconds with no network (Requirements 6.8, 19.5–19.8).
+6. **Offline, per-test-isolated, fast.** Every Chroma test uses its own `Persist_Directory`, every embedding comes from the Phase 1 `FakeEmbedder`, and the whole suite — Phase 1 plus Phase 2 — stays under 300 seconds with no network (Requirements 6.8, 19.5–19.8).
 
 ### Key design decisions
 
 | Decision | Rationale |
 |---|---|
-| `embedding_function=None` on the collection, vectors always supplied by us | This is not a style choice, it is the offline guarantee. Chroma's *default* embedding function is an ONNX build of `all-MiniLM-L6-v2` whose model files are **downloaded on first use** ([Chroma embeddings docs](https://github.com/chroma-core/docs/blob/main/docs/embeddings.md)). Accepting the default would mean a network fetch inside `Chroma_Store`, a second embedding path competing with the Week 1 Embedder, and a silent dimensionality of 384 regardless of the configured provider. Passing `None` makes Chroma raise if we ever forget a vector, which converts a possible silent-wrong-embedding bug into a loud error (Requirements 1.12, 2.2, 3.3, 19.7). |
-| Query fetches `n_results = count` while `count <= Exact_Search_Limit`, then sorts locally | Two guarantees for the price of one. hnswlib raises its search beam to at least `k`, so asking for every item forces an exhaustive layer-0 scan — that is *why* the top-K is exact below the limit (Requirement 3.5). And having every candidate in hand is the only way to apply Week 1's tie-break rule (ascending `insertion_index`) correctly at the K boundary (Requirements 3.5, 5.5, 6.5). Cost is bounded at 1000 rows per query. |
-| `Store_Admin_Interface` is a separate ABC, and `In_Memory_Store` gains it by **subclass**, not by edit | Requirement 18.4 requires the admin contract to be additive and `Vector_Store_Interface` to keep exactly its three Week 1 operations. `stores/memory_admin.py::InMemoryAdminStore(InMemoryStore, StoreAdminInterface)` adds the five admin operations without touching `stores/memory.py`, and `isinstance(store, InMemoryStore)` still holds so Requirements 18.6 and 18.10 are satisfied by construction. § "Extending In_Memory_Store without editing it" compares this against a mixin. |
+| `embedding_function=None` on the collection, vectors always supplied by us | This is not a style choice, it is the offline guarantee. Chroma's *default* embedding function is an ONNX build of `all-MiniLM-L6-v2` whose model files are **downloaded on first use** ([Chroma embeddings docs](https://github.com/chroma-core/docs/blob/main/docs/embeddings.md)). Accepting the default would mean a network fetch inside `Chroma_Store`, a second embedding path competing with the Phase 1 Embedder, and a silent dimensionality of 384 regardless of the configured provider. Passing `None` makes Chroma raise if we ever forget a vector, which converts a possible silent-wrong-embedding bug into a loud error (Requirements 1.12, 2.2, 3.3, 19.7). |
+| Query fetches `n_results = count` while `count <= Exact_Search_Limit`, then sorts locally | Two guarantees for the price of one. hnswlib raises its search beam to at least `k`, so asking for every item forces an exhaustive layer-0 scan — that is *why* the top-K is exact below the limit (Requirement 3.5). And having every candidate in hand is the only way to apply Phase 1's tie-break rule (ascending `insertion_index`) correctly at the K boundary (Requirements 3.5, 5.5, 6.5). Cost is bounded at 1000 rows per query. |
+| `Store_Admin_Interface` is a separate ABC, and `In_Memory_Store` gains it by **subclass**, not by edit | Requirement 18.4 requires the admin contract to be additive and `Vector_Store_Interface` to keep exactly its three Phase 1 operations. `stores/memory_admin.py::InMemoryAdminStore(InMemoryStore, StoreAdminInterface)` adds the five admin operations without touching `stores/memory.py`, and `isinstance(store, InMemoryStore)` still holds so Requirements 18.6 and 18.10 are satisfied by construction. § "Extending In_Memory_Store without editing it" compares this against a mixin. |
 | One cached id→(insertion_index, source_path) map inside `Chroma_Store` | Six separate requirements need the same lookup: duplicate-id rejection (3.11, 3.12), next insertion index (3.4), insertion-index retention on upsert (3.15), delete-by-source-path (3.16), per-source stored counts for reconciliation (8.16), and orphan detection (8.17). Deriving each independently would mean six Chroma round trips per ingest run. One map built on first use serves all six. |
 | Ingest is two passes: load+hash+chunk everything, then embed+commit per file | Requirement 8.11 requires the `Max_Chunks_Per_Run` guardrail to fire *before any Embedder call*, which is impossible without knowing the total chunk count first. Peak memory is `Max_Chunks_Per_Run × Chunk_Size` ≈ 1 MB at the defaults, which is cheaper than the alternative of paying for embeddings and then discovering the run was too big. |
 | The manifest is rewritten after **each** committed file, atomically | Requirement 8.12 says a file's entry appears only after all its chunks are stored, and 8.13 says entries for already-committed files survive a mid-run failure. Both hold only if the commit point is per file. `os.replace` over a temp file in the same directory makes each of those rewrites atomic (Requirement 7.6). N small writes per run is a real cost and an acceptable one at this corpus size. |
-| `RetrievalOutcome` is an enum on a result wrapper, not a boolean | Requirements 11.1, 11.8, and 12.3 describe three mutually exclusive states, one of which (empty collection) explicitly must *not* be reported as no-relevant-context. A boolean cannot represent that, and Week 3's refusal logic keys off the distinction. |
+| `RetrievalOutcome` is an enum on a result wrapper, not a boolean | Requirements 11.1, 11.8, and 12.3 describe three mutually exclusive states, one of which (empty collection) explicitly must *not* be reported as no-relevant-context. A boolean cannot represent that, and Phase 3's refusal logic keys off the distinction. |
 | Concurrency means **threads in one process**, and the log append is lock-guarded | Requirements 14.12 and 19.11 want 8–16 concurrent retrievals; Requirement 2.10 says one `Persist_Directory` serves one process. The only consistent reading is threads sharing one `Chroma_Store` and one log writer. § "Concurrency model" works this through, including why `O_APPEND` alone is not sufficient for records larger than `PIPE_BUF`. |
 | Embedding dimensionality is resolved **without** a provider call | The `Collection_Fingerprint` needs the dimensionality at collection-creation time (Requirement 4.2), but Requirement 8.6 forbids any Embedder call on a no-change run. A probe embed would break 8.6 and 9.5. § "Resolving the dimensionality offline" gives the four-step resolution and the pinned model table. |
 
@@ -38,28 +38,28 @@ Nothing here is a framework. The only new third-party dependency is `chromadb`, 
 - **The default embedding function is a privacy and network hazard.** Beyond the download cost, a collection left with a default embedding function will embed query text through that function, which has been reported as leaking document content to external services in some configurations ([issue #5848](https://github.com/chroma-core/chroma/issues/5848)). `embedding_function=None` removes the whole class of problem.
 - **Chroma stores embeddings as 32-bit floats.** Round-trip tolerance and conversion tolerance are both set from that fact rather than guessed; the arithmetic is in § "Why the tolerance is 1e-5".
 
-### Out of scope for Week 2
+### Out of scope for Phase 2
 
-Prompt construction, LLM answer generation, citations inside generated answers, re-ranking, hybrid or keyword search, metadata filtering at query time, multi-collection routing, and any UI. Week 3 consumes `RetrievalResult` — specifically its `outcome` and its `SearchHit` sequence — and adds nothing to the storage or retrieval layer.
+Prompt construction, LLM answer generation, citations inside generated answers, re-ranking, hybrid or keyword search, metadata filtering at query time, multi-collection routing, and any UI. Phase 3 consumes `RetrievalResult` — specifically its `outcome` and its `SearchHit` sequence — and adds nothing to the storage or retrieval layer.
 
 ---
 
 ## Architecture
 
-### What changes in Week 1, and what does not
+### What changes in Phase 1, and what does not
 
-The frozen set is the six modules named in Requirement 18.1: `chunking.py`, `embeddings/` (Embedder), `loading/base.py`, `loading/pdf_loader.py`, `loading/markdown_loader.py`, and `similarity.py`. At the end of Week 2 every one of them is **byte-identical** to its content at the Week 1 completion revision, checked by `tests/test_foundation_unmodified.py` (Requirement 18.9). `models.py` is also unchanged: no field is added to `Chunk` (Requirement 18.8), and every new data model lives in a new module.
+The frozen set is the six modules named in Requirement 18.1: `chunking.py`, `embeddings/` (Embedder), `loading/base.py`, `loading/pdf_loader.py`, `loading/markdown_loader.py`, and `similarity.py`. At the end of Phase 2 every one of them is **byte-identical** to its content at the Phase 1 completion revision, checked by `tests/test_foundation_unmodified.py` (Requirement 18.9). `models.py` is also unchanged: no field is added to `Chunk` (Requirement 18.8), and every new data model lives in a new module.
 
 Exactly two pre-existing modules change, and each change is required by name:
 
 | Module | Change | Required by | Why it cannot be avoided |
 |---|---|---|---|
 | `stores/factory.py` | one import swap plus one branch | Requirement 18.5 | 18.5 states the factory must return a `Chroma_Store` for selection `chroma` and an `In_Memory_Store` for `memory`. The branch *is* the requirement. |
-| `config.py` | two new nested settings dataclasses, appended as two defaulted fields on `Configuration`, plus their parsers in `load_configuration` | Requirements 1.1–1.9 | 1.1 says "THE Configuration SHALL read … in addition to every setting named in Week 1 Requirement 1". A second, parallel configuration object would contradict that sentence and would split validation ordering across two modules. |
+| `config.py` | two new nested settings dataclasses, appended as two defaulted fields on `Configuration`, plus their parsers in `load_configuration` | Requirements 1.1–1.9 | 1.1 says "THE Configuration SHALL read … in addition to every setting named in Phase 1 Requirement 1". A second, parallel configuration object would contradict that sentence and would split validation ordering across two modules. |
 
-Neither module is in the 18.1/18.9 frozen set. Both changes are strictly additive: no existing field, parameter, or return type changes, so every Week 1 construction site and every Week 1 test compiles and passes unmodified (Requirement 18.10).
+Neither module is in the 18.1/18.9 frozen set. Both changes are strictly additive: no existing field, parameter, or return type changes, so every Phase 1 construction site and every Phase 1 test compiles and passes unmodified (Requirement 18.10).
 
-Everything else in Week 2 is a **new file**.
+Everything else in Phase 2 is a **new file**.
 
 #### The single factory change, in full
 
@@ -71,7 +71,7 @@ from askmydocs.stores.memory_admin import InMemoryAdminStore   # was: memory.InM
 
 
 def build_store(configuration: Configuration) -> VectorStoreInterface:
-    """Week 2: two branches. Requirement 18.5."""
+    """Phase 2: two branches. Requirement 18.5."""
     if configuration.store.selection == "chroma":
         # Imported inside the branch so that (a) selecting `memory` works with no
         # chromadb installed at all, and (b) ModuleNotFoundError is raised at the
@@ -83,7 +83,7 @@ def build_store(configuration: Configuration) -> VectorStoreInterface:
 
 Three details carry weight. The import of `chroma_store` is **local to the branch**, which keeps `chromadb` off the import path of anyone who selected `memory` and gives `ChromaUnavailableError` a single natural raise site (Requirement 2.7). The `memory` branch now returns `InMemoryAdminStore`, which *is* an `InMemoryStore` by subclassing, so Requirement 18.5's "SHALL return an In_Memory_Store" holds and Requirement 3.14's "In_Memory_Store SHALL implement every Store_Admin_Interface operation" holds at the same time. And `factory.py` still does not import `chromadb` itself, so Requirement 18.3 — `chroma_store.py` is the *only* module importing the Chroma client package — remains true and is checked by the import-graph test (Requirement 18.7).
 
-One consequence to state plainly, because Requirement 18.6 depends on it: the default vector store selection is `chroma` (Requirement 1.2), so **the Week 1 Pipeline_Script must not obtain its store from `build_store`**. `scripts/04_pipeline.py` constructs `InMemoryStore()` directly, which is what the Week 1 module dependency graph already shows (`scripts → memstore`). If the Week 1 implementation instead routed through the factory, that one script line changes to a direct construction — scripts are not in the frozen set, and the change preserves Week 1 Requirement 11's output exactly (Requirement 18.6).
+One consequence to state plainly, because Requirement 18.6 depends on it: the default vector store selection is `chroma` (Requirement 1.2), so **the Phase 1 Pipeline_Script must not obtain its store from `build_store`**. `scripts/04_pipeline.py` constructs `InMemoryStore()` directly, which is what the Phase 1 module dependency graph already shows (`scripts → memstore`). If the Phase 1 implementation instead routed through the factory, that one script line changes to a direct construction — scripts are not in the frozen set, and the change preserves Phase 1 Requirement 11's output exactly (Requirement 18.6).
 
 ### Extending `In_Memory_Store` without editing it
 
@@ -91,21 +91,21 @@ One consequence to state plainly, because Requirement 18.6 depends on it: the de
 
 | Option | Verdict |
 |---|---|
-| Edit `stores/memory.py` to implement the admin operations | Rejected. It is the largest behavioural change of the three and gains nothing: the Week 1 `add`/`count`/`query` code would sit in the same file as five operations Week 1 never needed, and every future "did Week 1 change?" question gets harder to answer. |
+| Edit `stores/memory.py` to implement the admin operations | Rejected. It is the largest behavioural change of the three and gains nothing: the Phase 1 `add`/`count`/`query` code would sit in the same file as five operations Phase 1 never needed, and every future "did Phase 1 change?" question gets harder to answer. |
 | A mixin: `class InMemoryAdminMixin(StoreAdminInterface)` composed as `class InMemoryAdminStore(InMemoryAdminMixin, InMemoryStore)` | Rejected. The mixin still has to reach into `InMemoryStore`'s `_records` and `_dimensionality`, so the coupling is identical, but it is now split across two classes and the MRO has to be reasoned about. A mixin earns its keep when it is composed into more than one base; there is exactly one base here. |
-| **Chosen:** a subclass, `stores/memory_admin.py::InMemoryAdminStore(InMemoryStore, StoreAdminInterface)` | One new file, no edit to Week 1, one concrete type for the factory and the conformance suite to instantiate, and `isinstance(store, InMemoryStore)` still true so Requirements 18.5, 18.6, and 18.10 are unaffected. |
+| **Chosen:** a subclass, `stores/memory_admin.py::InMemoryAdminStore(InMemoryStore, StoreAdminInterface)` | One new file, no edit to Phase 1, one concrete type for the factory and the conformance suite to instantiate, and `isinstance(store, InMemoryStore)` still true so Requirements 18.5, 18.6, and 18.10 are unaffected. |
 
-The subclass reads and rewrites `self._records` and `self._dimensionality`, which are Week 1 private attributes. That coupling is the accepted cost, and it is bounded: the subclass reimplements none of `add`, `count`, `query`, or the Week 1 validation order, and `tests/test_foundation_unmodified.py` fails loudly if `memory.py` ever changes shape underneath it. Adding a protected accessor to `memory.py` would be cleaner in the abstract and is rejected only because it would modify a Week 1 module during the very week whose point is that Week 1 does not need modifying.
+The subclass reads and rewrites `self._records` and `self._dimensionality`, which are Phase 1 private attributes. That coupling is the accepted cost, and it is bounded: the subclass reimplements none of `add`, `count`, `query`, or the Phase 1 validation order, and `tests/test_foundation_unmodified.py` fails loudly if `memory.py` ever changes shape underneath it. Adding a protected accessor to `memory.py` would be cleaner in the abstract and is rejected only because it would modify a Phase 1 module during the very phase whose point is that Phase 1 does not need modifying.
 
-### Repository layout — Week 2 delta
+### Repository layout — Phase 2 delta
 
-Unchanged Week 1 files are elided; every line below is new unless marked.
+Unchanged Phase 1 files are elided; every line below is new unless marked.
 
 ```
 RAG/
 ├── pyproject.toml                    # CHANGED: + chromadb==<exact pin>, + "chroma" hypothesis profile
 ├── README.md                         # CHANGED: Req 1.10, 2.5, 2.6, 14.10, 17.8, 19.9
-├── .env.example                      # CHANGED: Req 1.10 — every Week 2 variable + default + range
+├── .env.example                      # CHANGED: Req 1.10 — every Phase 2 variable + default + range
 ├── .gitignore                        # CHANGED: .chroma/, logs/, reports/relevance-review*.csv  (Req 1.11)
 ├── question-sets/
 │   └── retrieval-questions.txt           # Question_Set, 5-10 lines                        (Req 15 glossary)
@@ -122,7 +122,7 @@ RAG/
 │   └── 08_relevance_review.py        # Relevance_Review_Script, generate + score modes  (Req 16)
 ├── src/askmydocs/
 │   ├── config.py                     # CHANGED (additive): VectorStoreSettings, RetrievalSettings
-│   ├── errors_week2.py               # Week 2 exception subtree, imported into errors' root
+│   ├── errors_phase2.py               # Phase 2 exception subtree, imported into errors' root
 │   ├── stores/
 │   │   ├── base.py                   # UNCHANGED  Vector_Store_Interface
 │   │   ├── memory.py                 # UNCHANGED  In_Memory_Store
@@ -136,7 +136,7 @@ RAG/
 │   │   └── logging.py                # RetrievalLogWriter, RetrievalLogRecord
 │   ├── ingest/
 │   │   ├── hashing.py                # Content_Hash over a single read pass            (Req 7.1, 7.8, 7.9)
-│   │   ├── reading.py                # bytes -> Document adapter over Week 1 loaders    (Req 7.1)
+│   │   ├── reading.py                # bytes -> Document adapter over Phase 1 loaders    (Req 7.1)
 │   │   ├── manifest.py               # SourceManifest, ManifestEntry, atomic write      (Req 7.2-7.6)
 │   │   ├── planner.py                # PURE classification: New/Changed/Unchanged/Deleted (Req 8.1, 8.9, 8.16)
 │   │   └── runner.py                 # orchestration, commit, rollback, reporting       (Req 8, 9)
@@ -145,12 +145,12 @@ RAG/
 │       ├── topk.py                   # experiment statistics + report rendering         (Req 15)
 │       └── review.py                 # CSV generate, label carry-over, precision@K      (Req 16)
 └── tests/
-    ├── strategies_week2.py           # Hypothesis strategies + "chroma" profile
+    ├── strategies_phase2.py           # Hypothesis strategies + "chroma" profile
     ├── conftest.py                   # CHANGED: + chroma_store fixture, telemetry off
-    ├── test_config_week2.py          # Req 1
+    ├── test_config_phase2.py          # Req 1
     ├── test_chroma_store.py          # Req 2, 3 (Chroma-specific), 4.1, 4.2, 4.6, 4.8, 12.1, 12.2
     ├── test_store_conformance.py     # Store_Conformance_Suite, both stores             (Req 6)
-    ├── test_store_properties_week2.py# Properties 1-12, 24-26
+    ├── test_store_properties_phase2.py# Properties 1-12, 24-26
     ├── test_manifest.py              # Req 7
     ├── test_ingest_examples.py       # worked scenarios A-F from this document          (Req 8, 9)
     ├── test_ingest_properties.py     # Properties 13-18
@@ -158,14 +158,14 @@ RAG/
     ├── test_retrieval_log.py         # Req 14, Properties 19-20
     ├── test_topk_experiment.py       # Req 15, Property 21
     ├── test_relevance_review.py      # Req 16, Properties 22, 27
-    ├── test_layering_week2.py        # Req 18.2, 18.3, 18.7 import-graph scan
+    ├── test_layering_phase2.py        # Req 18.2, 18.3, 18.7 import-graph scan
     ├── test_foundation_unmodified.py      # Req 18.9 content check of the frozen six
-    └── test_scripts_week2.py         # Req 9, 13, 15, 16 script-level behaviour
+    └── test_scripts_phase2.py         # Req 9, 13, 15, 16 script-level behaviour
 ```
 
-Two naming notes. `retrieval/logging.py` shadows the stdlib `logging` name *within its own package only*; because the project uses absolute imports throughout (`src/` layout, Week 1 decision), `import logging` elsewhere still resolves to the standard library. The alternative name `retrieval/retrieval_log.py` was considered and rejected as stuttering, but the shadowing risk is real enough to note here and to cover with one import test. `evaluation/` groups the two measurement scripts' logic, which the brief listed as bare script files; the logic lives in the package so it is unit-testable without running a script, matching the Week 1 rule that scripts are thin `main(argv) -> int` shells.
+Two naming notes. `retrieval/logging.py` shadows the stdlib `logging` name *within its own package only*; because the project uses absolute imports throughout (`src/` layout, Phase 1 decision), `import logging` elsewhere still resolves to the standard library. The alternative name `retrieval/retrieval_log.py` was considered and rejected as stuttering, but the shadowing risk is real enough to note here and to cover with one import test. `evaluation/` groups the two measurement scripts' logic, which the brief listed as bare script files; the logic lives in the package so it is unit-testable without running a script, matching the Phase 1 rule that scripts are thin `main(argv) -> int` shells.
 
-### Week 2 ingest flow
+### Phase 2 ingest flow
 
 ```mermaid
 flowchart TD
@@ -182,7 +182,7 @@ flowchart TD
     MAN --> ORPHAN[Startup orphan deletion:<br/>delete every Stored_Item whose source_path<br/>has no manifest entry<br/>Req 8.17]
     ORPHAN --> RECON[Startup reconciliation:<br/>manifest chunk_count vs stored count per source<br/>mismatch reclassifies as Changed<br/>Req 8.16]
 
-    RECON --> DISC[discover_notes<br/>Week 1 Req 6.3, 6.7-6.9]
+    RECON --> DISC[discover_notes<br/>Phase 1 Req 6.3, 6.7-6.9]
     DISC --> HASH[Per discovered file: ONE read pass<br/>bytes to Content_Hash to Document<br/>Req 7.1]
     HASH --> CLASS{Classify<br/>Req 8.1, 8.9}
 
@@ -250,7 +250,7 @@ flowchart TD
     MARK --> LOG[Append exactly ONE Retrieval_Log_Record<br/>single-line JSON, lock-guarded<br/>Req 14.1-14.7, 11.7, 12.7]
     LOG -->|log unwritable| E6[RetrievalLogError, no result<br/>Req 14.9]
     LOG --> RES([RetrievalResult:<br/>hits, outcome, top_score,<br/>threshold, collection_count])
-    RES --> W3[Week 3 reads .outcome<br/>to decide answer vs refusal]
+    RES --> W3[Phase 3 reads .outcome<br/>to decide answer vs refusal]
 ```
 
 Two things this diagram fixes deliberately. The **log append is the last step before returning**, so Requirement 14.11 — an error before a result produces no record — is true by control flow rather than by remembering to guard each raise site. And the **empty-collection branch skips the threshold check entirely**, which is what keeps Requirement 12.3's "SHALL report no No_Relevant_Context outcome" from colliding with Requirement 11.3's biconditional; 11.3 is explicitly conditioned on the collection holding at least one Stored_Item.
@@ -311,21 +311,21 @@ classDiagram
     AdminStore <|.. InMemoryAdminStore
     AdminStore <|.. ChromaStore
 
-    note for VectorStoreInterface "WEEK 1, UNCHANGED. Three operations,\nunchanged names, unchanged parameter\nand return types. Req 18.4"
-    note for StoreAdminInterface "WEEK 2, ADDITIVE. New file stores/admin.py.\nReq 3.13, 18.4"
-    note for InMemoryStore "WEEK 1, UNCHANGED. stores/memory.py\nis never edited."
-    note for InMemoryAdminStore "WEEK 2. New file stores/memory_admin.py.\nSubclass, not a mixin. Rewrites the Week 1\n_records list in place. Req 3.14"
-    note for ChromaStore "WEEK 2. New file stores/chroma_store.py.\nThe only module importing chromadb. Req 18.3"
+    note for VectorStoreInterface "PHASE 1, UNCHANGED. Three operations,\nunchanged names, unchanged parameter\nand return types. Req 18.4"
+    note for StoreAdminInterface "PHASE 2, ADDITIVE. New file stores/admin.py.\nReq 3.13, 18.4"
+    note for InMemoryStore "PHASE 1, UNCHANGED. stores/memory.py\nis never edited."
+    note for InMemoryAdminStore "PHASE 2. New file stores/memory_admin.py.\nSubclass, not a mixin. Rewrites the Phase 1\n_records list in place. Req 3.14"
+    note for ChromaStore "PHASE 2. New file stores/chroma_store.py.\nThe only module importing chromadb. Req 18.3"
     note for AdminStore "Protocol combining both ABCs.\nIngest_Script and Store_Conformance_Suite\ndepend on AdminStore, never on a concrete class."
 ```
 
 `AdminStore` is a `typing.Protocol` rather than a fourth ABC, so neither concrete class has to inherit from it and the intersection type stays purely structural. `ingest/runner.py` and the conformance suite are typed against `AdminStore`; `retrieval/retriever.py` is typed against `VectorStoreInterface` alone, because retrieval never writes.
 
-### Module dependencies added in Week 2
+### Module dependencies added in Phase 2
 
 ```mermaid
 flowchart BT
-    subgraph frozen["Week 1 frozen - byte-identical, Req 18.9"]
+    subgraph frozen["Phase 1 frozen - byte-identical, Req 18.9"]
         chunking[chunking.py]
         similarity[similarity.py]
         loading[loading/]
@@ -333,12 +333,12 @@ flowchart BT
         models[models.py]
     end
 
-    subgraph changed["Week 1, additively changed"]
+    subgraph changed["Phase 1, additively changed"]
         config[config.py]
         factory[stores/factory.py]
     end
 
-    subgraph storesw2["stores/ - Week 2"]
+    subgraph storesw2["stores/ - Phase 2"]
         base[base.py UNCHANGED]
         memory[memory.py UNCHANGED]
         admin[admin.py]
@@ -395,9 +395,9 @@ flowchart BT
     review --> qset
 ```
 
-Four absences are load-bearing and all four are enforced by `tests/test_layering_week2.py` (Requirement 18.7), not by convention:
+Four absences are load-bearing and all four are enforced by `tests/test_layering_phase2.py` (Requirement 18.7), not by convention:
 
-- **No arrow from `chunking.py`, `similarity.py`, `loading/`, or `embeddings/` into `stores/`, `retrieval/`, or `ingest/`.** The Week 1 layers do not learn that a database exists (Requirement 18.2).
+- **No arrow from `chunking.py`, `similarity.py`, `loading/`, or `embeddings/` into `stores/`, `retrieval/`, or `ingest/`.** The Phase 1 layers do not learn that a database exists (Requirement 18.2).
 - **Only `chroma_store.py` imports `chromadb`.** `chroma_compat.py` is a pure-Python shim that receives the module object as a parameter rather than importing it, which is what keeps Requirement 18.3 literally true for a single module.
 - **`retriever.py` does not import `chroma_store.py`.** It depends on `VectorStoreInterface`, so the conformance suite can drive the Retriever against `InMemoryAdminStore` with no Chroma involved.
 - **`planner.py` performs no I/O.** Classification takes a discovered-file list, a hash map, a manifest, and a per-source stored-count map, and returns an `IngestPlan`. That is what makes Requirements 8.1, 8.9, and 8.16 testable as pure functions over generated inputs instead of through a filesystem and a database.
@@ -406,7 +406,7 @@ Four absences are load-bearing and all four are enforced by `tests/test_layering
 
 Requirements 14.12 and 19.11 demand 8–16 concurrent Retriever invocations against one `Retrieval_Log`. Requirement 2.10 says one `Persist_Directory` supports one Ask My Docs process at a time. Those are only consistent under one reading, and the design states it explicitly:
 
-> **Concurrency in Week 2 means threads inside a single process, sharing one `Chroma_Store` instance (therefore one `PersistentClient`) and one `RetrievalLogWriter`. Multi-process concurrency against the same `Persist_Directory` is out of scope and is reported as `CollectionLockedError` (Requirement 2.10).**
+> **Concurrency in Phase 2 means threads inside a single process, sharing one `Chroma_Store` instance (therefore one `PersistentClient`) and one `RetrievalLogWriter`. Multi-process concurrency against the same `Persist_Directory` is out of scope and is reported as `CollectionLockedError` (Requirement 2.10).**
 
 That reading drives three mechanisms:
 
@@ -426,7 +426,7 @@ Requirement 14.5's "single append-mode write" is satisfied literally: one `os.wr
 
 ```python
 SUPPORTED_STORE_SELECTIONS: Final = ("memory", "chroma")
-SUPPORTED_DISTANCE_METRICS: Final = ("cosine",)          # Req 1.5 - Week 2 supports one
+SUPPORTED_DISTANCE_METRICS: Final = ("cosine",)          # Req 1.5 - Phase 2 supports one
 COLLECTION_NAME_PATTERN: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{1,61}[A-Za-z0-9]$")
 
 
@@ -450,16 +450,16 @@ class RetrievalSettings:
 
 @dataclass(frozen=True)
 class Configuration:
-    # ... every Week 1 field, unchanged, in its original order ...
+    # ... every Phase 1 field, unchanged, in its original order ...
     store: VectorStoreSettings = field(default_factory=VectorStoreSettings)
     retrieval: RetrievalSettings = field(default_factory=RetrievalSettings)
 ```
 
-Both new fields carry defaults and are appended last, so every Week 1 construction site — including every Week 1 test — still builds a valid `Configuration` with no change (Requirement 18.10).
+Both new fields carry defaults and are appended last, so every Phase 1 construction site — including every Phase 1 test — still builds a valid `Configuration` with no change (Requirement 18.10).
 
-`load_configuration` gains a Week 2 phase that runs **after** the Week 1 phases, in this order: store selection → distance metric → collection name → `Top_K` → `Relevance_Threshold` → path resolution. Selection and metric come first because they decide whether the rest of the store settings matter at all; `Collection_Name` precedes the numerics because its rule is the most intricate and the message most worth reading first. Every path is resolved against the repository root when not absolute (Requirement 1.9), using `Path(__file__).resolve().parents[2]` as the root anchor so the resolution does not depend on the process working directory.
+`load_configuration` gains a Phase 2 phase that runs **after** the Phase 1 phases, in this order: store selection → distance metric → collection name → `Top_K` → `Relevance_Threshold` → path resolution. Selection and metric come first because they decide whether the rest of the store settings matter at all; `Collection_Name` precedes the numerics because its rule is the most intricate and the message most worth reading first. Every path is resolved against the repository root when not absolute (Requirement 1.9), using `Path(__file__).resolve().parents[2]` as the root anchor so the resolution does not depend on the process working directory.
 
-Two notes on validation. `Top_K` parsing is strict in the Week 1 sense: `"5 "` is accepted after trimming, `"5.0"`, `"5e0"`, and `"1_0"` are rejected (Requirement 1.6). `Relevance_Threshold` parsing accepts any Python float literal including `-0.5`, `0`, `1`, and `3e-1`, because it is a decimal number by Requirement 1.7's own wording; `nan` and `inf` are rejected as outside `[-1.0, 1.0]`.
+Two notes on validation. `Top_K` parsing is strict in the Phase 1 sense: `"5 "` is accepted after trimming, `"5.0"`, `"5e0"`, and `"1_0"` are rejected (Requirement 1.6). `Relevance_Threshold` parsing accepts any Python float literal including `-0.5`, `0`, `1`, and `3e-1`, because it is a decimal number by Requirement 1.7's own wording; `nan` and `inf` are rejected as outside `[-1.0, 1.0]`.
 
 `Collection_Name` validation is one regex plus a length check rather than four separate checks, but the *message* enumerates all three rules — permitted character set, first-and-last-character rule, and the 3-to-63 length range — because Requirement 1.8 demands all three regardless of which one the value violated. The regex encodes the length range too (`1..61` interior characters plus the two anchors), and the explicit length check exists only so a 2-character or 64-character value gets the length wording first.
 
@@ -512,8 +512,8 @@ class CollectionState(frozenset):
 
 
 class StoreAdminInterface(ABC):
-    """Additive Week 2 contract. Deliberately NOT merged into Vector_Store_Interface,
-    which keeps exactly its three Week 1 operations (Req 18.4)."""
+    """Additive Phase 2 contract. Deliberately NOT merged into Vector_Store_Interface,
+    which keeps exactly its three Phase 1 operations (Req 18.4)."""
 
     # --- the five operations Requirement 3.13 names -------------------------
     @abstractmethod
@@ -562,7 +562,7 @@ Requirement 3.13 names five operations; the interface declares eight. `iter_item
 
 ```python
 class InMemoryAdminStore(InMemoryStore, StoreAdminInterface):
-    """In_Memory_Store plus the Week 2 admin contract. stores/memory.py is not edited."""
+    """In_Memory_Store plus the Phase 2 admin contract. stores/memory.py is not edited."""
 
     def iter_items(self) -> Iterator[StoredItem]:
         for record in self._records:
@@ -595,9 +595,9 @@ class InMemoryAdminStore(InMemoryStore, StoreAdminInterface):
         self._dimensionality = self._dimensionality or len(embeddings[0])
 ```
 
-The build-then-apply shape is copied deliberately from Week 1's `add`: everything that can fail happens before anything mutates, so the "Collection_State unchanged on rejection" clauses of Requirements 3.9, 3.12, and 3.19 are structural rather than remembered. `validate_batch` is shared with `ChromaStore` and lives in `stores/admin.py`, which is what makes the two stores agree on *which* input is invalid — a prerequisite for the conformance suite (Requirement 6.1) being able to assert identical error behaviour from identical test code.
+The build-then-apply shape is copied deliberately from Phase 1's `add`: everything that can fail happens before anything mutates, so the "Collection_State unchanged on rejection" clauses of Requirements 3.9, 3.12, and 3.19 are structural rather than remembered. `validate_batch` is shared with `ChromaStore` and lives in `stores/admin.py`, which is what makes the two stores agree on *which* input is invalid — a prerequisite for the conformance suite (Requirement 6.1) being able to assert identical error behaviour from identical test code.
 
-Note that `insertion_index` for a *new* id is `len(self._records)` computed before the loop and incremented locally. Because replacements never change the list length, the sequence of insertion indices stays `0, 1, …, count-1` across any mix of upserts (Week 1 Requirement 10.5's invariant, preserved).
+Note that `insertion_index` for a *new* id is `len(self._records)` computed before the loop and incremented locally. Because replacements never change the list length, the sequence of insertion indices stays `0, 1, …, count-1` across any mix of upserts (Phase 1 Requirement 10.5's invariant, preserved).
 
 ### `ChromaStore` (`stores/chroma_store.py`)
 
@@ -608,7 +608,7 @@ EXACT_SEARCH_LIMIT: Final = 1000        # Exact_Search_Limit (glossary, Req 3.5,
 RECALL_FLOOR: Final = 0.95              # Recall_Floor (glossary, Req 3.20)
 HNSW_SEARCH_EF: Final = EXACT_SEARCH_LIMIT
 TIE_MARGIN: Final = 64                  # over-fetch above the exact limit
-ZERO_NORM_THRESHOLD: Final = 1e-12      # Req 3.8, matches Week 1's similarity.py
+ZERO_NORM_THRESHOLD: Final = 1e-12      # Req 3.8, matches Phase 1's similarity.py
 FINGERPRINT_VERSION: Final = 1
 DEFAULT_MAX_WRITE_BATCH: Final = 4096   # below the observed SQLite-derived 5461 cap
 
@@ -678,7 +678,7 @@ class ChromaStore(VectorStoreInterface, StoreAdminInterface):
     def __enter__(self) -> "ChromaStore": ...
     def __exit__(self, *exc) -> None: ...        # calls close()
 
-    # --- Vector_Store_Interface, Week 1 signatures unchanged ---------------
+    # --- Vector_Store_Interface, Phase 1 signatures unchanged ---------------
     def add(self, chunks, embeddings) -> None:
         """Rejects duplicate ids already stored (Req 3.11) and repeated within the
         batch (Req 3.12) before any write. Otherwise delegates to the same
@@ -720,7 +720,7 @@ def max_write_batch(client) -> int:
 
 `embedding_function=None` is passed explicitly on both `create` and `get_or_create` (Requirement 3.3). Chroma's default is not "no embedding function" but an ONNX `all-MiniLM-L6-v2` that downloads model files on first use. Passing `None` therefore buys three things at once: no network request from inside the store (Requirements 1.12, 2.2, 19.7), one embedding path rather than two competing ones, and a loud `ValueError` from Chroma if our code ever calls `add` or `query` without supplying vectors — a bug that would otherwise silently embed text with the wrong model at the wrong dimensionality.
 
-`Settings(anonymized_telemetry=False)` is passed as well. Chroma's telemetry is an outbound request; the Week 1 test-suite socket guard would turn it into a hard failure, and in production it would violate Requirement 1.12's "no network request" for the local-provider path.
+`Settings(anonymized_telemetry=False)` is passed as well. Chroma's telemetry is an outbound request; the Phase 1 test-suite socket guard would turn it into a hard failure, and in production it would violate Requirement 1.12's "no network request" for the local-provider path.
 
 The `Collection_Fingerprint` is written **once, at creation**. Two facts make this the only workable choice: `get_or_create_collection` ignores the `metadata` argument when the collection already exists, so re-passing the fingerprint on every open would be a no-op that quietly hides drift; and `collection.modify()` rejects any metadata payload containing `hnsw:space`, so there is no safe way to amend metadata later without risking the loss of the space setting. Hence the requirement-mandated shape: validate on open, and on any mismatch terminate and tell the learner to reset (Requirements 4.6, 4.8). A collection created by some other tool has no `askmydocs:` keys and therefore fails `from_metadata` with the field list — which is precisely Requirement 4.8.
 
@@ -728,15 +728,15 @@ The `Collection_Fingerprint` is written **once, at creation**. Two facts make th
 
 ```python
 def stored_metadata(chunk: Chunk, insertion_index: int) -> dict[str, MetadataValue]:
-    """Week 1's flat mapping plus the store-owned insertion index. No field is added
+    """Phase 1's flat mapping plus the store-owned insertion index. No field is added
     to the Chunk model (Req 18.8); insertion_index is owned by the store, exactly as
-    it is in Week 1's StoredRecord."""
+    it is in Phase 1's StoredRecord."""
     return {**chunk.to_metadata(), INSERTION_INDEX_KEY: insertion_index}
 ```
 
 So each Chroma record carries `source_path: str`, `index: int`, `start_offset: int`, `end_offset: int`, `insertion_index: int`. All five are of a permitted type.
 
-**Metadata value type limits.** Chroma's metadata column accepts `str`, `int`, `float`, and `bool` only. `None`, lists, dicts, tuples, sets, `Decimal`, `datetime`, and numpy scalars are all rejected, and an empty metadata mapping is rejected by some versions. `validate_metadata` checks every value before any write and raises `MetadataValueError` naming **every** offending key together with the permitted type list (Requirement 3.19), leaving the collection untouched. Two subtleties are handled explicitly: `bool` is a subclass of `int` in Python, so the check uses `type(value) in PERMITTED_METADATA_TYPES` rather than `isinstance`, which keeps the error message honest about what was actually supplied; and `float('nan')` / `float('inf')` are rejected even though they are of type `float`, because they do not survive a JSON round trip inside Chroma's storage layer and would come back as `null` or raise on read. Week 1's `Chunk.to_metadata()` can only produce `str` and `int`, so in practice this validator fires only for hand-constructed chunks in tests — which is exactly where a type bug should surface.
+**Metadata value type limits.** Chroma's metadata column accepts `str`, `int`, `float`, and `bool` only. `None`, lists, dicts, tuples, sets, `Decimal`, `datetime`, and numpy scalars are all rejected, and an empty metadata mapping is rejected by some versions. `validate_metadata` checks every value before any write and raises `MetadataValueError` naming **every** offending key together with the permitted type list (Requirement 3.19), leaving the collection untouched. Two subtleties are handled explicitly: `bool` is a subclass of `int` in Python, so the check uses `type(value) in PERMITTED_METADATA_TYPES` rather than `isinstance`, which keeps the error message honest about what was actually supplied; and `float('nan')` / `float('inf')` are rejected even though they are of type `float`, because they do not survive a JSON round trip inside Chroma's storage layer and would come back as `null` or raise on read. Phase 1's `Chunk.to_metadata()` can only produce `str` and `int`, so in practice this validator fires only for hand-constructed chunks in tests — which is exactly where a type bug should surface.
 
 **Insertion index assignment.** Requirement 3.4 requires every added item's insertion index to exceed every index already stored. `ChromaStore` maintains `self._index: dict[str, IndexEntry]`, built lazily on first use by paging `collection.get(include=["metadatas"])` and recording `(chunk_id → insertion_index, source_path)`. `self._next_insertion_index` is `1 + max(existing)` — or `0` when the collection is empty. The map is then kept current in memory by every add, upsert, and delete, so the O(N) scan happens once per process. One map, six requirements: duplicate-id rejection (3.11, 3.12), next index (3.4), upsert index retention (3.15), delete-by-source-path without a `where` query (3.16), per-source counts for reconciliation (8.16), and the orphan sweep (8.17).
 
@@ -761,7 +761,7 @@ Deletes are segmented identically, because the same cap applies to `delete(ids=.
 
 #### float32 storage precision
 
-Chroma stores embeddings as 32-bit floats. Week 1 computes in float64 and hands over `list[float]`, so a vector written and read back is not bit-identical: each element is rounded to the nearest float32, a relative error of at most 2⁻²⁴ ≈ 5.96e-8. This is why Requirement 5.4 states its round-trip rule as a tolerance rather than equality, and why it uses an absolute tolerance of 1e-5 for elements of magnitude at most 1.0 and a relative tolerance of 1e-5 above that — a float32 with magnitude 1e3 has an absolute quantum of about 6e-5, which no absolute tolerance of 1e-5 could ever satisfy. The two-regime rule is not a hedge; it is the only formulation that is simultaneously satisfiable and meaningful across the permitted element range of `[-1e3, 1e3]`.
+Chroma stores embeddings as 32-bit floats. Phase 1 computes in float64 and hands over `list[float]`, so a vector written and read back is not bit-identical: each element is rounded to the nearest float32, a relative error of at most 2⁻²⁴ ≈ 5.96e-8. This is why Requirement 5.4 states its round-trip rule as a tolerance rather than equality, and why it uses an absolute tolerance of 1e-5 for elements of magnitude at most 1.0 and a relative tolerance of 1e-5 above that — a float32 with magnitude 1e3 has an absolute quantum of about 6e-5, which no absolute tolerance of 1e-5 could ever satisfy. The two-regime rule is not a hedge; it is the only formulation that is simultaneously satisfiable and meaningful across the permitted element range of `[-1e3, 1e3]`.
 
 `StoredItem.embedding` is therefore a `tuple[float, ...]` of float64 values that happen to be exactly representable in float32. Comparisons between stores always go through the tolerance-aware helpers or `state_key`'s rounding; no code path compares embeddings with `==`.
 
@@ -798,13 +798,13 @@ Validation precedes the Chroma call so that Requirement 3.8's "SHALL issue no Ch
 
 Reconstructing a `Chunk` from the returned document and metadata is a straight field mapping — `text` from the document, `source_path`/`index`/`start_offset`/`end_offset` from the metadata — and it is the operation Requirements 5.2 and 5.3 assert round-trip fidelity for. `Chunk` is frozen and its `chunk_id` is derived, so the reconstructed chunk compares equal to the original by plain `==` when text and all four metadata fields survived.
 
-The local re-sort is not redundant with Chroma's ordering. Chroma returns ascending distance, which is descending score, but it has no notion of our tie-break rule. Sorting on the composite key `(-score, insertion_index)` gives both the descending-score order and the ascending-insertion-index tie-break in one step with no reliance on sort stability — the same technique Week 1's `InMemoryStore.query` uses, which is what makes the two stores agree at Requirement 6.3's granularity.
+The local re-sort is not redundant with Chroma's ordering. Chroma returns ascending distance, which is descending score, but it has no notion of our tie-break rule. Sorting on the composite key `(-score, insertion_index)` gives both the descending-score order and the ascending-insertion-index tie-break in one step with no reliance on sort stability — the same technique Phase 1's `InMemoryStore.query` uses, which is what makes the two stores agree at Requirement 6.3's granularity.
 
 ### `Retriever` (`retrieval/retriever.py`)
 
 ```python
 class RetrievalOutcome(Enum):
-    """Week 3 branches on this. Three states, mutually exclusive, closed set."""
+    """Phase 3 branches on this. Three states, mutually exclusive, closed set."""
     RELEVANT_CONTEXT = "relevant_context"        # top_score >= threshold   (Req 11.8)
     NO_RELEVANT_CONTEXT = "no_relevant_context"  # count > 0, top < threshold (Req 11.1)
     EMPTY_COLLECTION = "empty_collection"        # count == 0                (Req 12.3)
@@ -812,7 +812,7 @@ class RetrievalOutcome(Enum):
 
 @dataclass(frozen=True)
 class ScoredHit:
-    """A Week 1 SearchHit plus the Requirement 11.2 mark. SearchHit is not modified."""
+    """A Phase 1 SearchHit plus the Requirement 11.2 mark. SearchHit is not modified."""
     hit: SearchHit
     below_threshold: bool
 
@@ -837,7 +837,7 @@ class RetrievalResult:
 
     @property
     def search_hits(self) -> tuple[SearchHit, ...]:
-        """The plain Week 1 shape, for callers that want no Week 2 wrapper."""
+        """The plain Phase 1 shape, for callers that want no Phase 2 wrapper."""
 
     @property
     def has_relevant_context(self) -> bool:
@@ -861,15 +861,15 @@ class Retriever:
         invocation writes its own log record (Req 14.1)."""
 ```
 
-`RetrievalResult` wraps the glossary's `Retrieval_Result` (`.hits`) rather than being it, because Requirements 10.11, 11.1, and 12.3 all require the Retriever to *report* things that are not properties of a hit sequence: the highest score, whether it clears the threshold, and whether the collection was empty. Adding those to Week 1's `SearchHit` would violate Requirements 18.1 and 18.8; putting them on a wrapper costs one level of indirection and keeps Week 1 frozen. `search_hits` exists so Week 3 and the conformance suite can take the Week 1 shape when they do not need the marks.
+`RetrievalResult` wraps the glossary's `Retrieval_Result` (`.hits`) rather than being it, because Requirements 10.11, 11.1, and 12.3 all require the Retriever to *report* things that are not properties of a hit sequence: the highest score, whether it clears the threshold, and whether the collection was empty. Adding those to Phase 1's `SearchHit` would violate Requirements 18.1 and 18.8; putting them on a wrapper costs one level of indirection and keeps Phase 1 frozen. `search_hits` exists so Phase 3 and the conformance suite can take the Phase 1 shape when they do not need the marks.
 
 **The threshold boundary is inclusive, and only in one direction.** Requirement 11.8 is explicit that a top score *equal* to the threshold is relevant context. So the outcome test is `top_score >= threshold`, and the per-hit mark is `hit.score < threshold`. Those two are consistent: a hit whose score exactly equals the threshold is not marked below threshold, and if it is the top hit the outcome is `RELEVANT_CONTEXT`. Written the other way round — `top_score > threshold` for the outcome, or `<=` for the mark — the boundary case would report no relevant context while simultaneously not marking the hit as sub-threshold. Property 12 pins the boundary with `@example(top_score == threshold)` seeded explicitly, because a generator over floats will essentially never produce exact equality.
 
-**Sub-threshold hits are still returned.** Requirement 11.2 is unambiguous: on the `NO_RELEVANT_CONTEXT` outcome the result holds `min(Top_K, count)` hits, no hit is omitted because of its score, and every sub-threshold hit is marked. The reason to keep them is practical — the learner tuning the threshold needs to see what *almost* matched, and the Query_Script prints them under an explicit "below the threshold" heading (Requirements 11.5, 13.7). The reason it is safe is that Week 3 branches on `outcome`, not on the presence of hits, so returning them cannot cause an answer to be generated from noise.
+**Sub-threshold hits are still returned.** Requirement 11.2 is unambiguous: on the `NO_RELEVANT_CONTEXT` outcome the result holds `min(Top_K, count)` hits, no hit is omitted because of its score, and every sub-threshold hit is marked. The reason to keep them is practical — the learner tuning the threshold needs to see what *almost* matched, and the Query_Script prints them under an explicit "below the threshold" heading (Requirements 11.5, 13.7). The reason it is safe is that Phase 3 branches on `outcome`, not on the presence of hits, so returning them cannot cause an answer to be generated from noise.
 
-**The empty collection is a distinct outcome, not a special case of no-relevant-context.** Requirement 12.3 requires zero hits, *no* reported highest score, and *no* `No_Relevant_Context` report. Collapsing the two states into one boolean would make it impossible for the Query_Script to print the three distinct outcome lines Requirement 13.7 requires, and would leave Week 3 unable to distinguish "your notes do not cover this" from "you have not ingested anything yet" — two situations with completely different remedies.
+**The empty collection is a distinct outcome, not a special case of no-relevant-context.** Requirement 12.3 requires zero hits, *no* reported highest score, and *no* `No_Relevant_Context` report. Collapsing the two states into one boolean would make it impossible for the Query_Script to print the three distinct outcome lines Requirement 13.7 requires, and would leave Phase 3 unable to distinguish "your notes do not cover this" from "you have not ingested anything yet" — two situations with completely different remedies.
 
-**Week 3's contract with this type.** Week 3 reads `outcome` to decide whether to answer at all, then `hits` (or `search_hits`) for the context, then `chunk.source_path` plus `start_offset`/`end_offset` for citations. It adds nothing to `RetrievalResult` and does not re-derive relevance from scores; the threshold decision is made once, here, where the configured value lives.
+**Phase 3's contract with this type.** Phase 3 reads `outcome` to decide whether to answer at all, then `hits` (or `search_hits`) for the context, then `chunk.source_path` plus `start_offset`/`end_offset` for citations. It adds nothing to `RetrievalResult` and does not re-derive relevance from scores; the threshold decision is made once, here, where the configured value lives.
 
 ### `RetrievalLogWriter` (`retrieval/logging.py`)
 
@@ -936,9 +936,9 @@ One JSON object per line, UTF-8, terminated by a single line feed (Requirement 1
 | `hits[].text_truncated` | bool | whether the marker was appended | design addition |
 | `hits[].below_threshold` | bool | the Requirement 11.2 mark | 11.2 |
 
-`outcome` is carried *in addition to* `no_relevant_context` rather than instead of it. Requirement 14.2 names the boolean, so the boolean is present verbatim; the string exists because the boolean cannot express the empty-collection case, and a log reader in Week 3 should not have to infer it from `returned_count == 0`. `text_truncated` exists for the same reason in miniature: with `text_length` and `text` both present a reader *could* derive it, but making it explicit means a 500-character chunk whose text happens to end in `…` is not ambiguous.
+`outcome` is carried *in addition to* `no_relevant_context` rather than instead of it. Requirement 14.2 names the boolean, so the boolean is present verbatim; the string exists because the boolean cannot express the empty-collection case, and a log reader in Phase 3 should not have to infer it from `returned_count == 0`. `text_truncated` exists for the same reason in miniature: with `text_length` and `text` both present a reader *could* derive it, but making it explicit means a 500-character chunk whose text happens to end in `…` is not ambiguous.
 
-**Truncation.** `text` holds the first 500 characters of the chunk text, counted in Unicode code points exactly as Week 1 counts them, with `…` appended only when the full text is longer. `text_length` always reports the *untruncated* length, so the log records both what the chunk was and what was stored. The 500-character limit is a privacy and size decision as much as a formatting one: the log holds verbatim text from the learner's own notes, which is why Requirement 14.7 excludes it from version control and why the README must say so (Requirement 14.10).
+**Truncation.** `text` holds the first 500 characters of the chunk text, counted in Unicode code points exactly as Phase 1 counts them, with `…` appended only when the full text is longer. `text_length` always reports the *untruncated* length, so the log records both what the chunk was and what was stored. The 500-character limit is a privacy and size decision as much as a formatting one: the log holds verbatim text from the learner's own notes, which is why Requirement 14.7 excludes it from version control and why the README must say so (Requirement 14.10).
 
 **Single-line guarantee.** `json.dumps` without `indent` emits no newline, and any newline inside a string value is escaped to `\n` by the JSON encoder, so no chunk text — however full of line breaks — can split a record across lines. This is a property of the encoder, not of the chunk text, which is why no pre-sanitization of the text is needed here (unlike the CSV path, where a real newline in a field would break the one-row-per-line rule and is therefore replaced).
 
@@ -961,7 +961,7 @@ def hash_bytes(data: bytes) -> str: ...
 # ingest/reading.py
 def document_from_bytes(discovered: DiscoveredFile, data: bytes,
                         reporter: Reporter) -> Document:
-    """Build a Week 1 Document from bytes already in memory."""
+    """Build a Phase 1 Document from bytes already in memory."""
 
 
 # ingest/manifest.py
@@ -1014,9 +1014,9 @@ def classify(discovered: Sequence[str], hashes: Mapping[str, str],
     """Requirements 8.1, 8.9, 8.16, 8.17 as a pure function."""
 ```
 
-`document_from_bytes` deserves its own note, because it is the one place Week 2 does not simply call a Week 1 function. Requirement 7.1 requires the bytes hashed and the bytes loaded to come from a single read pass, but Week 1's loaders take a `DiscoveredFile` and open the path themselves, and Requirement 18.9 forbids adding a `load_bytes` entry point to them. So `document_from_bytes` reconstructs the Document from bytes using Week 1's **public** helpers wherever they suffice — `decode_utf8` and `normalize_newlines` from `loading/base.py` are exactly what `MarkdownLoader` itself uses, so the markdown path is a composition, not a reimplementation. The PDF path constructs `PdfReader(io.BytesIO(data))` and joins per-page text with a single line feed, which does duplicate about ten lines of `PdfLoader`'s logic.
+`document_from_bytes` deserves its own note, because it is the one place Phase 2 does not simply call a Phase 1 function. Requirement 7.1 requires the bytes hashed and the bytes loaded to come from a single read pass, but Phase 1's loaders take a `DiscoveredFile` and open the path themselves, and Requirement 18.9 forbids adding a `load_bytes` entry point to them. So `document_from_bytes` reconstructs the Document from bytes using Phase 1's **public** helpers wherever they suffice — `decode_utf8` and `normalize_newlines` from `loading/base.py` are exactly what `MarkdownLoader` itself uses, so the markdown path is a composition, not a reimplementation. The PDF path constructs `PdfReader(io.BytesIO(data))` and joins per-page text with a single line feed, which does duplicate about ten lines of `PdfLoader`'s logic.
 
-That duplication is the accepted cost, and it is fenced: `tests/test_ingest_examples.py` asserts, for every committed fixture file, that `document_from_bytes(d, path.read_bytes(), r) == foundation_loader.load(d, r)`. A differential test against the original is a stronger guard than a comment, and it turns any future divergence into a failing test rather than a silent difference between what the pipeline script sees and what the ingest script sees. The cleaner fix — Week 1's loaders exposing `load_bytes` and defining `load` in terms of it — is noted here as the right change to make at the start of Week 3, when the frozen-content check for Week 1 has served its purpose.
+That duplication is the accepted cost, and it is fenced: `tests/test_ingest_examples.py` asserts, for every committed fixture file, that `document_from_bytes(d, path.read_bytes(), r) == foundation_loader.load(d, r)`. A differential test against the original is a stronger guard than a comment, and it turns any future divergence into a failing test rather than a silent difference between what the pipeline script sees and what the ingest script sees. The cleaner fix — Phase 1's loaders exposing `load_bytes` and defining `load` in terms of it — is noted here as the right change to make at the start of Phase 3, when the frozen-content check for Phase 1 has served its purpose.
 
 ### Scripts
 
@@ -1027,7 +1027,7 @@ That duplication is the accepted cost, and it is fenced: `tests/test_ingest_exam
 | `07_topk_experiment.py` | 15 | `Top_K_Experiment_Script`. One embedding per distinct question, three store queries per question, per-combination and aggregate statistics, atomic report replace. |
 | `08_relevance_review.py` | 16 | `Relevance_Review_Script`. `generate` and `score` subcommands. |
 
-Every script stays a thin `main(argv) -> int` that builds `Configuration` and `Reporter`, calls into the package, catches the typed exceptions, and returns an exit status — the Week 1 rule, unchanged. `Reporter` is reused as-is, which is what gives every Week 2 script the API-key redaction of Requirements 9.6 and 13.8 for free: `Reporter` already applies `redact()` to every string on its way to a stream, so no Week 2 call site has to remember.
+Every script stays a thin `main(argv) -> int` that builds `Configuration` and `Reporter`, calls into the package, catches the typed exceptions, and returns an exit status — the Phase 1 rule, unchanged. `Reporter` is reused as-is, which is what gives every Phase 2 script the API-key redaction of Requirements 9.6 and 13.8 for free: `Reporter` already applies `redact()` to every string on its way to a stream, so no Phase 2 call site has to remember.
 
 The Query_Script's three outcome lines are worth spelling out, since Requirement 13.7 requires them to differ:
 
@@ -1041,7 +1041,7 @@ And `--persist-directory` missing entirely is handled before any store construct
 
 ## Data Models
 
-Every model below is new and lives in a new module. `models.py` is untouched: `Document`, `Chunk`, `StoredRecord`, and `SearchHit` keep their Week 1 definitions, and no field is added to `Chunk` (Requirement 18.8).
+Every model below is new and lives in a new module. `models.py` is untouched: `Document`, `Chunk`, `StoredRecord`, and `SearchHit` keep their Phase 1 definitions, and no field is added to `Chunk` (Requirement 18.8).
 
 ```python
 # stores/admin.py
@@ -1083,7 +1083,7 @@ ReviewRow               # question_id, question, top_k, rank, chunk_id, source_p
 PrecisionResult         # question_id, precision | None, labelled_rows, total_rows (Req 16.5, 16.13)
 ```
 
-All are frozen dataclasses, for the same reason Week 1 gave: determinism assertions become plain equality checks, and no caller can mutate a stored or returned value after the fact.
+All are frozen dataclasses, for the same reason Phase 1 gave: determinism assertions become plain equality checks, and no caller can mutate a stored or returned value after the fact.
 
 ### Invariants maintained across models
 
@@ -1141,7 +1141,7 @@ Similarity_Score = clamp(1 − Chroma_Distance, −1, 1) = cos(query, stored)
 
 ### Why the score is norm-independent
 
-This is the part worth being explicit about, because it is the reason a score from Chroma can be compared against a score from Week 1's `Similarity_Calculator` at all.
+This is the part worth being explicit about, because it is the reason a score from Chroma can be compared against a score from Phase 1's `Similarity_Calculator` at all.
 
 Requirement 4.3 says the `Similarity_Score` must be computed "independently of the Euclidean norms of the two Embedding_Vectors". It is, and not because our code normalizes anything — our code never touches the norms. It is norm-independent because the normalization happens *inside* the distance function, before the dot product. For any positive scalars `s` and `t`:
 
@@ -1152,7 +1152,7 @@ d(s·a, t·b) = 1 − (s·a)/‖s·a‖ · (t·b)/‖t·b‖
             = d(a, b)
 ```
 
-So scaling either vector by any positive factor leaves the distance, and therefore the score, unchanged. Week 1's `cosine_similarity` has the identical invariance — it divides by both norms explicitly, and Week 1's Property 4 tests exactly that over scale factors spanning twelve orders of magnitude. Two functions with the same scale invariance and the same value on unit vectors agree everywhere on the non-degenerate domain, which is why Requirement 4.4 can demand equality over vectors whose norms range across `[1e-3, 1e4]` rather than only over unit vectors.
+So scaling either vector by any positive factor leaves the distance, and therefore the score, unchanged. Phase 1's `cosine_similarity` has the identical invariance — it divides by both norms explicitly, and Phase 1's Property 4 tests exactly that over scale factors spanning twelve orders of magnitude. Two functions with the same scale invariance and the same value on unit vectors agree everywhere on the non-degenerate domain, which is why Requirement 4.4 can demand equality over vectors whose norms range across `[1e-3, 1e4]` rather than only over unit vectors.
 
 The practical consequence: the store does not need to normalize before writing, the Embedder does not need to return unit vectors, and a provider that changes its output scale between model versions cannot shift the threshold. The `Relevance_Threshold` of 0.30 means the same thing regardless.
 
@@ -1160,7 +1160,7 @@ The practical consequence: the store does not need to normalize before writing, 
 
 Requirements 4.4, 5.4, 6.3, and 6.4 all use 1e-5. That number is derived from float32, not chosen for comfort.
 
-Chroma stores each embedding element as a 32-bit float, whose relative precision is `2⁻²⁴ ≈ 5.96e-8`. Three error sources accumulate between Week 1's float64 cosine and Chroma's reported distance:
+Chroma stores each embedding element as a 32-bit float, whose relative precision is `2⁻²⁴ ≈ 5.96e-8`. Three error sources accumulate between Phase 1's float64 cosine and Chroma's reported distance:
 
 1. **Storage quantization.** Each stored element is rounded to the nearest float32: relative error up to `6e-8` per element. Over a `D`-dimensional vector this perturbs the normalized vector `â` by roughly `√D · 6e-8` in the worst case.
 2. **Normalization in float32.** hnswlib computes the norm and divides in single precision, adding another `≈ √D · 6e-8`.
@@ -1172,7 +1172,7 @@ So 1e-5 is the smallest round tolerance that the arithmetic actually supports at
 
 Requirement 5.4's split — absolute 1e-5 below magnitude 1.0, relative 1e-5 above — follows from the same arithmetic applied to a single element rather than to a dot product. A float32 near 1.0 has an absolute quantum of about `1.2e-7`, comfortably inside 1e-5; a float32 near 1e3 has an absolute quantum of about `6e-5`, which no absolute tolerance of 1e-5 could ever satisfy, so the rule switches to relative. A single-regime rule would be either unsatisfiable or vacuous.
 
-### Verification against the Week 1 Similarity_Calculator
+### Verification against the Phase 1 Similarity_Calculator
 
 Requirement 4.4 is verified by Property 1, and the verification is structured so it cannot pass for the wrong reason:
 
@@ -1182,11 +1182,11 @@ FOR each generated (A, B) with ‖A‖, ‖B‖ ∈ [1e-3, 1e4], |elements| ≤ 
     store.add([chunk_a], [A])                       # A is stored
     hits     = store.query(B, k=1)                  # B is the query
     observed = hits[0].score                        # 1 − Chroma_Distance, clamped
-    expected = cosine_similarity(A, B)              # Week 1, float64, untouched
+    expected = cosine_similarity(A, B)              # Phase 1, float64, untouched
     ASSERT abs(observed − expected) <= 1e-5
 ```
 
-Four choices make this a real check rather than a tautology. The expected value comes from the **unmodified Week 1 module**, so the test is a cross-implementation comparison, not a self-comparison. The generator draws norms across seven orders of magnitude, so a missing normalization cannot pass. Seeded `@example` cases cover the cases where the conversion is most likely to be wrong at the edges: identical vectors (score 1), negated vectors (score −1), orthogonal vectors (score 0), and a pair whose cosine is exactly `0.5`. And the assertion is on the *score*, not on the distance, so an error anywhere in the chain — metric configuration, distance extraction, conversion, clamping — surfaces in one place.
+Four choices make this a real check rather than a tautology. The expected value comes from the **unmodified Phase 1 module**, so the test is a cross-implementation comparison, not a self-comparison. The generator draws norms across seven orders of magnitude, so a missing normalization cannot pass. Seeded `@example` cases cover the cases where the conversion is most likely to be wrong at the edges: identical vectors (score 1), negated vectors (score −1), orthogonal vectors (score 0), and a pair whose cosine is exactly `0.5`. And the assertion is on the *score*, not on the distance, so an error anywhere in the chain — metric configuration, distance extraction, conversion, clamping — surfaces in one place.
 
 A second, cheaper check guards the thing a property test cannot see: that the collection is actually indexing with cosine and not silently with `l2`. The **metric probe** stores one vector `v`, queries with `2·v`, and asserts the returned distance is within 1e-5 of 0. Under `cosine` the answer is 0 because the scaling divides out; under `l2` the answer is `‖v‖²`, which for any non-degenerate `v` is nowhere near 0. This is exactly the failure reported in [chroma-core/chroma#1335](https://github.com/chroma-core/chroma/issues/1335), where a `hnsw:space` metadata setting did not take effect, and it is the reason the design pins an exact Chroma version and probes rather than trusting the setting.
 
@@ -1246,7 +1246,7 @@ In practice HNSW at `ef = 1000` over 1200 items returns the exact top-10 nearly 
 
 Requirement 6.3's differential equivalence — the two stores return the same chunk-id sequence — is the strongest test in the suite, and there is a fair objection to it: if `ChromaStore` fetches everything and sorts in Python, and `InMemoryStore` scans everything and sorts in Python, is the test comparing two implementations or one?
 
-It is comparing two, and the shared part is small. Everything that could go wrong between them is on the Chroma side and is not shared: the collection's distance metric, the storage and retrieval of the vector at float32, the normalization inside hnswlib, the distance-to-score conversion, the id-to-document-to-metadata alignment in the response, the insertion-index metadata round trip, and the batch segmentation that decided which record landed where. `InMemoryStore` shares none of that; it holds float64 tuples and calls Week 1's `cosine_similarity`. The only genuinely shared code is the final `sort(key=lambda hit: (-hit.score, hit.insertion_index))` expression and the `SearchHit` dataclass.
+It is comparing two, and the shared part is small. Everything that could go wrong between them is on the Chroma side and is not shared: the collection's distance metric, the storage and retrieval of the vector at float32, the normalization inside hnswlib, the distance-to-score conversion, the id-to-document-to-metadata alignment in the response, the insertion-index metadata round trip, and the batch segmentation that decided which record landed where. `InMemoryStore` shares none of that; it holds float64 tuples and calls Phase 1's `cosine_similarity`. The only genuinely shared code is the final `sort(key=lambda hit: (-hit.score, hit.insertion_index))` expression and the `SearchHit` dataclass.
 
 That sharing is also deliberate rather than accidental. Requirement 6.1 requires *the same test code* to drive both stores, and Requirement 6.5's monotonic-ordering property is asserted against both. If the sort rule were written twice it would eventually be written differently, and the conformance suite would be testing that two divergent orderings agree. One ordering rule, asserted for both stores, tested against an independently-derived score, is the arrangement that makes Requirement 6.3 a real constraint.
 
@@ -1285,10 +1285,10 @@ FUNCTION run_ingest(configuration, reporter, embedder, reset_requested):
     stored_counts = store.count_by_source_path()      # refresh after deletion
 
     # ---- 4. Discover and hash. ONE read pass per file (Req 7.1) ----
-    discovery = discover_notes(configuration.notes_folder)   # Week 1, unchanged
+    discovery = discover_notes(configuration.notes_folder)   # Phase 1, unchanged
     hashes    = {}
     documents = {}
-    FOR discovered IN discovery.files:                 # ascending relative_path (Week 1 Req 6.8)
+    FOR discovered IN discovery.files:                 # ascending relative_path (Phase 1 Req 6.8)
         TRY:
             data, content_hash   = read_and_hash(discovered.absolute_path)
             document             = document_from_bytes(discovered, data, reporter)
@@ -1296,7 +1296,7 @@ FUNCTION run_ingest(configuration, reporter, embedder, reset_requested):
             reporter.error(...)                        # oversize, encrypted, unparsable
             CONTINUE                                   # excluded from store and manifest
         IF document.text has no non-whitespace character:
-            reporter.warning(...)                      # Req 9.7, Week 1 Req 7.8
+            reporter.warning(...)                      # Req 9.7, Phase 1 Req 7.8
             CONTINUE                                   # excluded (Req 8.8)
         hashes[discovered.relative_path]    = content_hash
         documents[discovered.relative_path] = document
@@ -1455,7 +1455,7 @@ The manifest write itself is atomic by Requirement 7.6's mechanism: serialize to
 
 ### Worked scenarios
 
-A running corpus, at the default `Chunk_Size` 500 and `Chunk_Overlap` 50, so `stride = 450`. Week 1's closed-form chunk count is `1 + ceil((n − 500) / 450)` for `n > 500`.
+A running corpus, at the default `Chunk_Size` 500 and `Chunk_Overlap` 50, so `stride = 450`. Phase 1's closed-form chunk count is `1 + ceil((n − 500) / 450)` for `n > 500`.
 
 | Source file | Text length `n` | Chunks | Chunk ids |
 |---|---|---|---|
@@ -1519,7 +1519,7 @@ The learner trims `algorithms.md` from 2400 to 900 characters. New chunk count: 
 | Final count | `20 − 6 + 2 = 16`, and `2 + 3 + 11 = 16` ✔ (Requirement 7.7) |
 | Report | new 0, changed 1, unchanged 2, deleted 0, upserted 2, items deleted 6, batch calls 1, stored 16 |
 
-**This is the scenario Requirement 8.4 exists for.** Without step 8a, upsert would have replaced `#0` and `#1` and left `#2`–`#5` in the collection: four chunks of text the learner deleted, still returnable by a query, still carrying `start_offset`/`end_offset` values that index past the end of the current 900-character document. A citation rendered from one of them in Week 3 would point at a character range that does not exist. The stored count would also be 20, contradicting the manifest's `2 + 3 + 11 = 16` and breaking Requirement 7.7.
+**This is the scenario Requirement 8.4 exists for.** Without step 8a, upsert would have replaced `#0` and `#1` and left `#2`–`#5` in the collection: four chunks of text the learner deleted, still returnable by a query, still carrying `start_offset`/`end_offset` values that index past the end of the current 900-character document. A citation rendered from one of them in Phase 3 would point at a character range that does not exist. The stored count would also be 20, contradicting the manifest's `2 + 3 + 11 = 16` and breaking Requirement 7.7.
 
 The fresh insertion indices (20, 21) rather than reused ones (0, 1) are a consequence of delete-then-insert, and they are correct: Requirement 3.15's index retention applies to an upsert over an id that is *currently stored*, and after step 8a it is not. The observable effect is that re-ingested chunks sort later among score ties, which is a stable and documented outcome, not an ordering bug.
 
@@ -1605,7 +1605,7 @@ Two decisions here. **One embedding, three store queries.** Reusing the embeddin
 
 Aggregates per `K` (Requirement 15.3) are the mean across the question set of the highest score, the mean of the per-question mean score, and the mean of the below-threshold count. The report is rendered whole and written atomically — temp file in the report's directory, then `os.replace` (Requirement 15.5) — the same mechanism as the manifest, for the same reason: an interrupted run must not leave a truncated report where a complete previous one was.
 
-The tradeoff section (Requirement 15.6, at least 100 words, naming the selected `K` for Week 3 and the reason) is hand-written by the learner into a template section that the script preserves across regenerations by re-reading the existing report and carrying the section forward when present. The script emits a placeholder with a word-count reminder when the section is absent, and `tests/test_topk_experiment.py` checks the structural requirements — section present, word count ≥ 100, a `K` named — not the prose quality.
+The tradeoff section (Requirement 15.6, at least 100 words, naming the selected `K` for Phase 3 and the reason) is hand-written by the learner into a template section that the script preserves across regenerations by re-reading the existing report and carrying the section forward when present. The script emits a placeholder with a word-count reminder when the section is absent, and `tests/test_topk_experiment.py` checks the structural requirements — section present, word count ≥ 100, a `K` named — not the prose quality.
 
 ### Relevance review, generate mode
 
@@ -1661,17 +1661,17 @@ The `Precision_Report` holds the per-question `Precision_At_K` to 4 decimals, th
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-Week 2 is an unusually good fit for property-based testing, and for a specific reason: **it ships two implementations of the same contract.** `InMemoryStore` is an exhaustive, float64, linear-scan store whose correctness Week 1 already established with 31 properties. `ChromaStore` is an on-disk, float32, HNSW-indexed store. Requirement 6.1 requires one set of tests to drive both, which means the exhaustive implementation is available as a free oracle for the indexed one — a differential test with a trustworthy reference, which is the strongest shape a property test can take.
+Phase 2 is an unusually good fit for property-based testing, and for a specific reason: **it ships two implementations of the same contract.** `InMemoryStore` is an exhaustive, float64, linear-scan store whose correctness Phase 1 already established with 31 properties. `ChromaStore` is an on-disk, float32, HNSW-indexed store. Requirement 6.1 requires one set of tests to drive both, which means the exhaustive implementation is available as a free oracle for the indexed one — a differential test with a trustworthy reference, which is the strongest shape a property test can take.
 
 The ingest layer adds a second oracle of the same kind: "reset and rebuild from scratch" is a trivially correct model of "incrementally update", so Requirement 8.7 is a model-based property rather than a hand-written assertion about what the algorithm should have done.
 
 The 27 properties below are the output of the prework analysis and its redundancy reflection, which consolidated 41 candidates down to 27. Every FOR ALL criterion in Requirements 4, 5, 6, 7, 8, 10, 11, 12, 14, 15, and 16 maps to at least one property, all eleven property tests Requirement 19.4 names by title are present, and no two properties run the same generator to make the same assertion. Three criteria that read like properties were deliberately demoted to integration tests, and § "What is demoted, and why" says which and why.
 
-Every property test runs **at least 100 examples** (Requirement 19.3). Pure properties run 200 under the Week 1 `pure` profile; properties that touch a Chroma collection run exactly 100 under a new `chroma` profile, because a single example includes a collection reset and a batch write. Every failing run reports the Hypothesis seed and the shrunk input so it can be replayed (Requirement 19.3), which is Hypothesis's default behaviour with the example database enabled.
+Every property test runs **at least 100 examples** (Requirement 19.3). Pure properties run 200 under the Phase 1 `pure` profile; properties that touch a Chroma collection run exactly 100 under a new `chroma` profile, because a single example includes a collection reset and a batch write. Every failing run reports the Hypothesis seed and the shrunk input so it can be replayed (Requirement 19.3), which is Hypothesis's default behaviour with the example database enabled.
 
 ### Shared Hypothesis strategies
 
-New strategies live in `tests/strategies_week2.py` and reuse Week 1's `finite_element`, `vector`, `vector_pair`, `MIXED_ALPHABET`, and `unicode_text` unchanged.
+New strategies live in `tests/strategies_phase2.py` and reuse Phase 1's `finite_element`, `vector`, `vector_pair`, `MIXED_ALPHABET`, and `unicode_text` unchanged.
 
 ```python
 from datetime import timedelta
@@ -1702,7 +1702,7 @@ def bounded_vector(draw, dimension=CONFORMANCE_DIM):
         scaled = [v * (1e3 / max(abs(x) for x in scaled)) for v in scaled]
     return scaled
 
-# Chunk text: the Week 1 mixed alphabet, so code points, UTF-8 bytes, and grapheme
+# Chunk text: the Phase 1 mixed alphabet, so code points, UTF-8 bytes, and grapheme
 # clusters all disagree. Capped at 600 characters so the 500-char log truncation
 # boundary (Req 14.3) and the 300-char CSV boundary (Req 16.2) are both straddled.
 chunk_text = st.lists(st.sampled_from(MIXED_ALPHABET),
@@ -1785,15 +1785,15 @@ Four choices in the strategies deserve calling out.
 
 **Chunk text is capped at 600 characters.** That is deliberately just above both truncation boundaries the design has — 500 for the log (Requirement 14.3) and 300 for the CSV (Requirement 16.2) — so a random draw straddles them regularly rather than by luck. The exact boundaries (299/300/301, 499/500/501) are seeded as `@example` cases rather than left to the generator.
 
-**`corpus_mutation` weights the shrink case.** Rewriting a file to *shorter* text is the single mutation that exposes a missing delete-before-write, and an unweighted generator over six mutation kinds would produce it in about a sixth of examples. Weighting it up is the generated-input equivalent of Week 1's `multi_chunk_case`, which derived text length from the drawn chunk size so the multi-chunk branch was reachable on essentially every example.
+**`corpus_mutation` weights the shrink case.** Rewriting a file to *shorter* text is the single mutation that exposes a missing delete-before-write, and an unweighted generator over six mutation kinds would produce it in about a sixth of examples. Weighting it up is the generated-input equivalent of Phase 1's `multi_chunk_case`, which derived text length from the drawn chunk size so the multi-chunk branch was reachable on essentially every example.
 
 ---
 
-### Property 1: Chroma's Similarity_Score equals the Week 1 Cosine_Similarity
+### Property 1: Chroma's Similarity_Score equals the Phase 1 Cosine_Similarity
 
-*For all* pairs of Embedding_Vectors A and B whose lengths equal the Embedding_Dimensionality, whose Euclidean norms lie in `[1e-3, 1e4]`, and whose every element has absolute value at most `1e3`, where A is stored in the Chroma_Collection and B is supplied as the query Embedding_Vector, the Similarity_Score the Chroma_Store returns for A equals the value the Week 1 Similarity_Calculator returns for `(A, B)` within an absolute tolerance of `1e-5`; and the same equality holds after either vector is multiplied by any positive scalar in `[1e-3, 1e3]`.
+*For all* pairs of Embedding_Vectors A and B whose lengths equal the Embedding_Dimensionality, whose Euclidean norms lie in `[1e-3, 1e4]`, and whose every element has absolute value at most `1e3`, where A is stored in the Chroma_Collection and B is supplied as the query Embedding_Vector, the Similarity_Score the Chroma_Store returns for A equals the value the Phase 1 Similarity_Calculator returns for `(A, B)` within an absolute tolerance of `1e-5`; and the same equality holds after either vector is multiplied by any positive scalar in `[1e-3, 1e3]`.
 
-- Strategy: two independent `bounded_vector()` draws plus a positive `scale_factor`; the oracle is the **unmodified** Week 1 `cosine_similarity`, so this is a cross-implementation comparison, not a self-comparison.
+- Strategy: two independent `bounded_vector()` draws plus a positive `scale_factor`; the oracle is the **unmodified** Phase 1 `cosine_similarity`, so this is a cross-implementation comparison, not a self-comparison.
 - Assertions: `abs(hit.score - cosine_similarity(a, b)) <= 1e-5`; and `abs(score(s*a, t*b) - score(a, b)) <= 1e-5` for the scaling clause of Requirement 4.3.
 - Examples: 100 (`chroma`). Seeded with `@example` at `B == A` (score 1), `B == -A` (score −1), an orthogonal pair (score 0), a pair whose cosine is exactly 0.5, and at dimensionalities 384 and 1536 so the `√D` error budget of § "Why the tolerance is 1e-5" is exercised at the largest supported width.
 - Note: this is the property a wrong `hnsw:space`, a missing normalization, a sign error, or an off-by-one in the response zip all fail. The companion **metric probe** example test (store `v`, query `2v`, assert distance ≈ 0) covers the one failure this property cannot see — a collection silently indexed with `l2` whose *ordering* still looks plausible.
@@ -1815,7 +1815,7 @@ Four choices in the strategies deserve calling out.
 
 *For all* batches of 1 to 50 Chunks with bounded Embedding_Vectors stored in a Chroma_Collection: the Chunk text fetched by chunk id equals the stored text character for character; the source file path, ordinal index, start offset, and end offset fetched by chunk id equal the stored Chunk's values; every element of the fetched Embedding_Vector equals the stored element within `1e-5` absolute where the element's magnitude is at most 1.0 and within `1e-5` relative otherwise; and all three equalities still hold after the Chroma_Store is closed and a new Chroma_Store is opened against the same Persist_Directory, with the reported stored item count and Collection_State unchanged.
 
-- Strategy: `chunk_batch()` with `chunk_text` drawn from the Week 1 mixed alphabet, so emoji, combining marks, CJK, and non-breaking spaces all appear.
+- Strategy: `chunk_batch()` with `chunk_text` drawn from the Phase 1 mixed alphabet, so emoji, combining marks, CJK, and non-breaking spaces all appear.
 - Assertions: `fetched.text == chunk.text`; all four metadata fields equal; element-wise two-regime tolerance; then `store.close()`, reopen, and assert `count()` and `collection_state()` equality with a `SpyEmbedder` that fails the test if called.
 - Examples: 100 (`chroma`). Seeded with `@example` cases for text containing `"` and `\n` and `\\`, for an empty-text chunk, and at dimensionality 1536.
 - Note: consolidates five criteria into one generator per the prework reflection — 5.2, 5.3, and 5.4 assert different fields of the same round trip, 3.2 is the same statement from the write side, and the reopen clause discharges 2.4 and 5.1 at no extra generation cost. Asserting them separately would run the same write path five times per example.
@@ -2112,7 +2112,7 @@ Three groups of criteria read like properties and are deliberately not property-
 
 **Concurrent log appends (Requirements 14.12, 19.11) → three parameterized integration tests.** Hypothesis cannot generate a thread interleaving and cannot shrink one, so its example budget buys nothing for a race: a hundred examples at a hundred different thread counts is strictly worse than three thread counts repeated. The tests run at 2, 8, and 16 threads, each repeated, with records deliberately sized above `PIPE_BUF` (five hits at 500 characters each, roughly 3 KB of text plus the envelope) so the case § "Concurrency model" identifies as unprotected by `O_APPEND` alone is the case actually exercised. Property 20 carries the sequential form of the same statement.
 
-**Whole-suite and whole-run assertions (Requirements 1.12, 18.10, 19.7, 19.8) → smoke tests.** "The suite passes with no API key and issues no network request" and "the suite completes within 300 seconds" have no input to vary. They are enforced by the session-scoped socket guard inherited from Week 1 and by a CI duration check.
+**Whole-suite and whole-run assertions (Requirements 1.12, 18.10, 19.7, 19.8) → smoke tests.** "The suite passes with no API key and issues no network request" and "the suite completes within 300 seconds" have no input to vary. They are enforced by the session-scoped socket guard inherited from Phase 1 and by a CI duration check.
 
 And a short list of criteria that are not machine-checkable at all, stated so nothing is over-claimed: the content of the Learning_Notes (Requirements 4.5, 11.6, 16.11), the `Comparison_Note` (Requirement 17), and the Top-K tradeoff observation (Requirement 15.6). Structure is checkable — headings present, word counts met, `HNSW` named, a value of K named, the conversion formula present — and is checked. Whether the explanation is *correct and useful* is not, and a test that pretended otherwise would be checking word counts while claiming to check understanding.
 
@@ -2122,14 +2122,14 @@ And a short list of criteria that are not machine-checkable at all, stated so no
 
 ### Exception hierarchy
 
-Week 2's exceptions extend Week 1's single root, so scripts keep catching broadly at the boundary while tests assert narrowly. Week 1's `errors.py` is not modified: the new types live in `errors_week2.py` and subclass the Week 1 bases, which is the same additive pattern used for `Store_Admin_Interface`.
+Phase 2's exceptions extend Phase 1's single root, so scripts keep catching broadly at the boundary while tests assert narrowly. Phase 1's `errors.py` is not modified: the new types live in `errors_phase2.py` and subclass the Phase 1 bases, which is the same additive pattern used for `Store_Admin_Interface`.
 
 ```
-AskMyDocsError (Week 1 root)
-├── ConfigurationError (Week 1)
-│   └── [Week 2 reuses it]                 Req 1.4, 1.5, 1.6, 1.7, 1.8, and the
+AskMyDocsError (Phase 1 root)
+├── ConfigurationError (Phase 1)
+│   └── [Phase 2 reuses it]                 Req 1.4, 1.5, 1.6, 1.7, 1.8, and the
 │                                          dimensionality-unresolvable case
-├── StoreError (Week 1)
+├── StoreError (Phase 1)
 │   ├── ChromaUnavailableError             Req 2.7   package absent
 │   ├── PersistDirectoryError              Req 2.8   not a directory / not writable
 │   ├── CollectionOpenError                Req 2.9, 12.6   corrupt or version mismatch
@@ -2138,7 +2138,7 @@ AskMyDocsError (Week 1 root)
 │   ├── FingerprintMissingError            Req 4.8
 │   ├── DuplicateChunkIdError              Req 3.11, 3.12
 │   ├── MetadataValueError                 Req 3.19
-│   └── [Week 1's BatchLengthMismatchError, VectorLengthError,
+│   └── [Phase 1's BatchLengthMismatchError, VectorLengthError,
 │        DegenerateVectorError, InvalidKError are reused unchanged
 │        for Req 3.7, 3.8, 3.9]
 ├── ManifestError                          Req 7.5
@@ -2158,18 +2158,18 @@ AskMyDocsError (Week 1 root)
     ├── UnlabelledRowError                 Req 16.7
     ├── InvalidLabelError                  Req 16.8
     └── InconsistentTopKError              design addition, see § relevance review
-└── GuardrailError (Week 1)                Req 8.11  reused for Max_Chunks_Per_Run
+└── GuardrailError (Phase 1)                Req 8.11  reused for Max_Chunks_Per_Run
 ```
 
-Reusing Week 1's `VectorLengthError`, `DegenerateVectorError`, and `InvalidKError` for Requirements 3.7, 3.8, and 3.9 is not laziness — it is what lets the conformance suite assert the *same* exception type from both stores with the same test code (Requirement 6.1). If `ChromaStore` raised its own `ChromaInvalidKError`, every conformance assertion would need a store-dependent expected type, and the suite would stop being one set of tests.
+Reusing Phase 1's `VectorLengthError`, `DegenerateVectorError`, and `InvalidKError` for Requirements 3.7, 3.8, and 3.9 is not laziness — it is what lets the conformance suite assert the *same* exception type from both stores with the same test code (Requirement 6.1). If `ChromaStore` raised its own `ChromaInvalidKError`, every conformance assertion would need a store-dependent expected type, and the suite would stop being one set of tests.
 
-Library code never calls `sys.exit`. Each script's `main()` catches these types and maps them to a status, which is the Week 1 rule unchanged.
+Library code never calls `sys.exit`. Each script's `main()` catches these types and maps them to a status, which is the Phase 1 rule unchanged.
 
-### Exit statuses, extended from Week 1
+### Exit statuses, extended from Phase 1
 
-Week 1's statuses 0 through 5 keep their meanings exactly. Week 2 appends 6 through 11.
+Phase 1's statuses 0 through 5 keep their meanings exactly. Phase 2 appends 6 through 11.
 
-| Exit status | Meaning | Week | Requirements |
+| Exit status | Meaning | Phase | Requirements |
 |---|---|---|---|
 | 0 | Success, including every legitimately empty case | 1 | 6.6, 9.6, 11.4 (W1); 9.4, 11.4, 12.4, 12.5, 13.7, 15.10 (W2) |
 | 1 | Unexpected error (a bug); redacted traceback printed | 1 | — |
@@ -2228,7 +2228,7 @@ The ordering is chosen so that a crash *during rollback* lands on the safe side.
 | Chroma write fails for a source | yes | as above | 8.13, 8.14 |
 | Stored count for a source disagrees with the produced chunk count | yes | terminate, exit 8, naming the source path, the produced count, and the found count | 8.18, 8.19 |
 | Source bytes changed during the run (re-hash mismatch) | yes | **warn and continue** with the remaining sources; exit status is unaffected | 7.10, 7.11 |
-| Source fails to load (oversize, encrypted, unparsable, whitespace-only) | not needed | no items were written and no entry existed; warn or error per Week 1, exclude, continue | 9.7 |
+| Source fails to load (oversize, encrypted, unparsable, whitespace-only) | not needed | no items were written and no entry existed; warn or error per Phase 1, exclude, continue | 9.7 |
 | Rollback itself fails | — | terminate non-zero with the rollback failure reason; the next run's startup sweep restores the invariant | 8.17 |
 
 The last row is the honest one. The design does not promise that rollback always succeeds — a full disk or a lock can defeat it. What it promises is convergence: **every reachable state is one that a subsequent run's startup orphan sweep and reconciliation return to consistency.** Property 15 asserts exactly that, by evaluating the manifest-sum invariant both immediately after a fault-injected run and again after the following run.
@@ -2246,13 +2246,13 @@ Rollback is deliberately **per source path, not per run.** Requirement 8.13 requ
 | Fingerprint mismatch | **Fail fast**, exit 6, before any operation | This is the dangerous one. Continuing would compare vectors from two different embedding spaces and return confident nonsense; scores would look plausible and mean nothing. (4.6, 4.8) |
 | Manifest unparsable | **Fail fast**, exit 7 | Guessing at a corrupt manifest risks skipping files that are not actually ingested. (7.5) |
 | Total chunks over `Max_Chunks_Per_Run` | **Fail fast**, exit 4, before any Embedder call | The cost guardrail. Failing after spending the money defeats its purpose. (8.11) |
-| One source file fails to load | **Continue**, isolated | Week 1's rule, preserved. One corrupt PDF should not cost the learner the other nine files. (9.7) |
+| One source file fails to load | **Continue**, isolated | Phase 1's rule, preserved. One corrupt PDF should not cost the learner the other nine files. (9.7) |
 | Source bytes change mid-run | **Continue** with a warning, that source rolled back | The other files' work is valid and paid for, and the condition is transient. (7.11) |
 | Embedder or Chroma failure on one source | **Fail**, exit 8, that source rolled back, prior commits kept | A half-ingested file must not be claimed as ingested; files already committed must not be re-embedded. (8.13, 8.14) |
 | Stored-count mismatch after upsert | **Fail**, exit 8, that source rolled back | A silent partial write is the worst outcome available: queries would return an incomplete document with no signal. (8.18, 8.19) |
 | Empty or whitespace-only question | **Fail**, exit 9, no Embedder call, no log record | Embedding whitespace costs money and returns meaningless neighbours. (10.7) |
 | Collection empty at query time | **Succeed**, exit 0, with the ingest command | Requirements 12.3–12.5 are explicit: this is a valid state for a learner who has not ingested yet, not an error. |
-| Every score below the threshold | **Succeed**, exit 0, reporting the absence | Requirements 11.1 and 11.4. Reporting absence *is* the correct answer, and Week 3 depends on receiving it as one. |
+| Every score below the threshold | **Succeed**, exit 0, reporting the absence | Requirements 11.1 and 11.4. Reporting absence *is* the correct answer, and Phase 3 depends on receiving it as one. |
 | `Retrieval_Log` unwritable | **Fail**, exit 9, no result returned | Requirement 14.9. A retrieval that is not logged is not reviewable, and silently dropping the record would make the Top-K experiment's evidence incomplete without saying so. |
 | Any unlabelled row in score mode | **Fail**, exit 11, naming every one | Requirement 16.7. Counting empty as `n` would understate precision and let a half-finished review produce a plausible number. |
 
@@ -2262,7 +2262,7 @@ The through-line, one sentence: **anything that could make a score mean somethin
 
 ## Testing Strategy
 
-One command, unchanged from Week 1 and stated in the README (Requirement 19.9):
+One command, unchanged from Phase 1 and stated in the README (Requirement 19.9):
 
 ```
 pytest
@@ -2274,11 +2274,11 @@ and the conformance suite alone, also stated in the README (Requirement 19.9):
 pytest tests/test_store_conformance.py
 ```
 
-`pyproject.toml` keeps Week 1's `testpaths`, `--strict-markers`, and default `pure` profile, and adds the `chroma` profile plus a `slow` marker for the recall test.
+`pyproject.toml` keeps Phase 1's `testpaths`, `--strict-markers`, and default `pure` profile, and adds the `chroma` profile plus a `slow` marker for the recall test.
 
 ### Dual approach: what each kind of test carries
 
-Unit and property tests divide the work the same way Week 1 divided it, and the division is deliberate.
+Unit and property tests divide the work the same way Phase 1 divided it, and the division is deliberate.
 
 **Property tests carry the universal statements** — the differential agreement between the two stores, the round trips, the ingest model comparison, the ordering and clamping invariants — where generated input across a large space is what finds bugs. Twenty-seven properties, each implemented by exactly **one** property-based test, each running at least 100 examples (Requirement 19.3).
 
@@ -2342,17 +2342,17 @@ Module scope rather than function scope also sidesteps Hypothesis's `function_sc
 
 ### Substitute Embedder, reused unchanged
 
-Every test that needs vectors uses Week 1's `tests/fakes.py::FakeEmbedder` with no modification (Requirement 19.5). It already satisfies everything Week 2 needs: a fixed dimensionality, identical vectors for identical input text on every invocation (SHA-256-seeded, so stable across processes and machines rather than salted per process like `hash()`), a guaranteed non-zero norm, recorded segments for call-count assertions, and no network.
+Every test that needs vectors uses Phase 1's `tests/fakes.py::FakeEmbedder` with no modification (Requirement 19.5). It already satisfies everything Phase 2 needs: a fixed dimensionality, identical vectors for identical input text on every invocation (SHA-256-seeded, so stable across processes and machines rather than salted per process like `hash()`), a guaranteed non-zero norm, recorded segments for call-count assertions, and no network.
 
-Three Week 1 variants are reused as-is for Week 2's failure paths: `ScriptedProvider` for the mid-run Embedder failures of Requirements 8.13 and 8.14, `SpyEmbedder` for every "issues no Embedder call" assertion (Requirements 8.6, 9.5, 10.7, 10.8, 10.9, and the no-Embedder-call clause of the persistence test), and Week 1's `SleepRecorder` wherever retry behaviour is incidentally exercised.
+Three Phase 1 variants are reused as-is for Phase 2's failure paths: `ScriptedProvider` for the mid-run Embedder failures of Requirements 8.13 and 8.14, `SpyEmbedder` for every "issues no Embedder call" assertion (Requirements 8.6, 9.5, 10.7, 10.8, 10.9, and the no-Embedder-call clause of the persistence test), and Phase 1's `SleepRecorder` wherever retry behaviour is incidentally exercised.
 
-One Week 2 addition, `tests/fakes_week2.py::DroppingStore`, wraps a real store and silently discards the final record of a write. It exists for exactly one requirement — 8.19's stored-count mismatch — which is otherwise unreachable, since a correct store never produces the condition. Injecting the fault is the only way to test the detection.
+One Phase 2 addition, `tests/fakes_phase2.py::DroppingStore`, wraps a real store and silently discards the final record of a write. It exists for exactly one requirement — 8.19's stored-count mismatch — which is otherwise unreachable, since a correct store never produces the condition. Injecting the fault is the only way to test the detection.
 
 Determinism of `FakeEmbedder` has a second-order benefit here that is worth naming: because identical text yields identical vectors, a corpus containing duplicate chunk text produces genuine score ties, which is what makes the tie-break clauses of Requirements 3.5, 5.5, and 6.3 reachable at all. A random embedder would make ties vanish and those clauses untested.
 
 ### No network, and Chroma's two network paths
 
-Week 1's session-scoped autouse `_no_network_no_key` fixture — which removes every key variable and patches `socket.socket` and `socket.create_connection` to raise — is inherited unchanged and covers Week 2 (Requirements 1.12, 19.7). Chroma introduces two specific ways to reach the network, and both are closed deliberately rather than left to the socket guard:
+Phase 1's session-scoped autouse `_no_network_no_key` fixture — which removes every key variable and patches `socket.socket` and `socket.create_connection` to raise — is inherited unchanged and covers Phase 2 (Requirements 1.12, 19.7). Chroma introduces two specific ways to reach the network, and both are closed deliberately rather than left to the socket guard:
 
 1. **The default embedding function downloads ONNX model files on first use.** Closed by passing `embedding_function=None` on every collection create and get (Requirement 3.3). If this were left to the socket guard, the failure would be a `RuntimeError` from a patched socket deep inside a model download, several frames from anything recognizable.
 2. **Telemetry.** Chroma's client posts anonymized usage events by default. Closed by `Settings(anonymized_telemetry=False)` at client construction, and additionally by setting `ANONYMIZED_TELEMETRY=False` in the test environment.
@@ -2376,13 +2376,13 @@ def store(request, tmp_path):
         built.close()
 ```
 
-Requirement 6.2 wants at least one case per criterion of Week 1 Requirement 10 and per behavioural criterion of Week 2 Requirement 3. That is bookkeeping, and bookkeeping drifts, so it is mechanized: each conformance test carries a `@pytest.mark.criteria("W1-10.4", "W2-3.15")` marker, and a meta-test asserts that the union of all markers covers the full declared criterion list, failing with the names of any uncovered criterion. The list of criteria lives in one module constant, so adding a criterion to the spec and forgetting the test produces a failure rather than a silent gap.
+Requirement 6.2 wants at least one case per criterion of Phase 1 Requirement 10 and per behavioural criterion of Phase 2 Requirement 3. That is bookkeeping, and bookkeeping drifts, so it is mechanized: each conformance test carries a `@pytest.mark.criteria("W1-10.4", "W2-3.15")` marker, and a meta-test asserts that the union of all markers covers the full declared criterion list, failing with the names of any uncovered criterion. The list of criteria lives in one module constant, so adding a criterion to the spec and forgetting the test produces a failure rather than a silent gap.
 
 Requirement 6.8's "the only test case accessing that Persist_Directory for the duration of that test case" is satisfied by `tmp_path`, which pytest guarantees is unique per test. A meta-test asserts the conformance fixture's directory is under `tmp_path` and not under the repository, which is what Requirement 19.6 asks for.
 
-### Verifying that Week 1 is unmodified
+### Verifying that Phase 1 is unmodified
 
-Requirement 18.9 requires comparing every frozen Week 1 module against its content at the recorded Week 1 completion revision and failing with the name of any module that differs. The implementation is a two-track check, because each track alone has a hole.
+Requirement 18.9 requires comparing every frozen Phase 1 module against its content at the recorded Phase 1 completion revision and failing with the name of any module that differs. The implementation is a two-track check, because each track alone has a hole.
 
 ```python
 FROZEN_MODULES = ("src/askmydocs/chunking.py", "src/askmydocs/similarity.py",
@@ -2394,7 +2394,7 @@ FROZEN_MODULES = ("src/askmydocs/chunking.py", "src/askmydocs/similarity.py",
                   "src/askmydocs/embeddings/openai_provider.py",
                   "src/askmydocs/embeddings/local_provider.py",
                   "src/askmydocs/models.py")
-FOUNDATION_REVISION = "foundation-complete"          # an annotated tag, created at Week 1 sign-off
+FOUNDATION_REVISION = "foundation-complete"          # an annotated tag, created at Phase 1 sign-off
 
 
 def normalized_sha256(path: Path) -> str:
@@ -2403,27 +2403,27 @@ def normalized_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 ```
 
-**Track 1, the committed baseline.** `tests/foundation_baseline.json` holds `{path: normalized_sha256}` for every frozen module, generated once at the Week 1 tag. The test recomputes and compares, failing with the list of every differing path. This works in any checkout, including a source archive with no git history, and it is the track that actually runs in CI.
+**Track 1, the committed baseline.** `tests/foundation_baseline.json` holds `{path: normalized_sha256}` for every frozen module, generated once at the Phase 1 tag. The test recomputes and compares, failing with the list of every differing path. This works in any checkout, including a source archive with no git history, and it is the track that actually runs in CI.
 
 **Track 2, the git cross-check.** When a git repository is present, the test additionally reads each module's content at `FOUNDATION_REVISION` via `git show` and compares. This closes track 1's hole: a baseline file is itself editable, so someone modifying a frozen module and regenerating the baseline would pass track 1. Track 2 is skipped with a clear reason when git is unavailable rather than silently passing.
 
 `models.py` is in the frozen list even though Requirement 18.1 does not name it, because Requirement 18.8 forbids adding any field to `Chunk` and byte-identity is the cheapest way to guarantee that. `config.py` and `stores/factory.py` are deliberately **absent** from the list, and the test module says so in a comment naming Requirements 1.1 and 18.5 — so a future reader does not "fix" the omission.
 
-Requirement 18.10's "every Week 1 test passes unmodified" is the same two-track idea applied to `tests/test_*.py` for the Week 1 files, plus the simple fact that the whole suite runs in one `pytest` invocation: if a Week 1 test broke, the suite would be red.
+Requirement 18.10's "every Phase 1 test passes unmodified" is the same two-track idea applied to `tests/test_*.py` for the Phase 1 files, plus the simple fact that the whole suite runs in one `pytest` invocation: if a Phase 1 test broke, the suite would be red.
 
 ### The import-graph check
 
-Week 1 already AST-scans `chunking.py` and `embeddings/*.py` for imports naming `askmydocs.stores`. Week 2 extends the same module (`tests/test_layering_week2.py`) with three additional rules (Requirements 18.2, 18.3, 18.7):
+Phase 1 already AST-scans `chunking.py` and `embeddings/*.py` for imports naming `askmydocs.stores`. Phase 2 extends the same module (`tests/test_layering_phase2.py`) with three additional rules (Requirements 18.2, 18.3, 18.7):
 
 1. No module under `chunking.py`, `similarity.py`, `loading/`, or `embeddings/` imports any name from `chromadb`, `askmydocs.stores`, `askmydocs.retrieval`, or `askmydocs.ingest`.
 2. `chromadb` is imported by **exactly one** module: `src/askmydocs/stores/chroma_store.py`. The scan counts `import chromadb`, `from chromadb import ...`, and `from chromadb.x import ...`, and also flags `importlib.import_module("chromadb")` by looking for the string literal in a call to `import_module`.
 3. `retrieval/retriever.py` does not import `chroma_store`, so retrieval is provably store-agnostic.
 
-The failure message names every offending module and every offending imported symbol, as Requirement 18.7 requires — not just the first one, so a single run tells the whole story. The scan operates on the `src/` tree, which is the reason Week 1 chose the `src/` layout: with a flat layout the scan could parse a working-directory shadow copy while the tests imported the installed one, and the check would be examining the wrong files.
+The failure message names every offending module and every offending imported symbol, as Requirement 18.7 requires — not just the first one, so a single run tells the whole story. The scan operates on the `src/` tree, which is the reason Phase 1 chose the `src/` layout: with a flat layout the scan could parse a working-directory shadow copy while the tests imported the installed one, and the check would be examining the wrong files.
 
 ### Suite time budget
 
-Requirement 19.8 caps the **whole** suite — Week 1 plus Week 2 — at 300 seconds. Week 1's measured allocation is roughly 112 seconds, leaving about 188 for Week 2. Allocation:
+Requirement 19.8 caps the **whole** suite — Phase 1 plus Phase 2 — at 300 seconds. Phase 1's measured allocation is roughly 112 seconds, leaving about 188 for Phase 2. Allocation:
 
 | Group | Tests | Budget | Notes |
 |---|---|---|---|
@@ -2438,7 +2438,7 @@ Requirement 19.8 caps the **whole** suite — Week 1 plus Week 2 — at 300 seco
 | Conformance example tests | ~60 tests × 2 stores | ~12 s | The Chroma parameterization pays per-test client construction; this is the one place that is accepted rather than optimized, because Requirement 6.8 asks for per-test-case directories in the conformance suite specifically. |
 | Script, manifest, review, and report tests | ~55 tests | ~10 s | `FakeEmbedder`, fixture corpora of 3 small files. |
 | Layering, frozen-content, repository, and meta tests | ~20 tests | ~3 s | AST parsing and file hashing. |
-| **Week 2 total** | | **~200 s** | |
+| **Phase 2 total** | | **~200 s** | |
 | **Whole suite** | | **~312 s** | **over budget — see the levers below** |
 
 The honest reading of that table is that the naive allocation does not fit, and the design says so rather than rounding the numbers down. Four levers, in the order they would be pulled:
@@ -2450,7 +2450,7 @@ The honest reading of that table is that the naive allocation does not fit, and 
 
 `--durations=15` is enabled locally so a newly slow test is visible immediately, and CI asserts the wall-clock duration so a regression fails rather than silently eating the margin.
 
-Hypothesis deadlines: the `chroma` profile sets `deadline=None`, because a single example can include a collection reset, a segmented write, and a query, and a per-example deadline on that would produce `DeadlineExceeded` failures that look like correctness bugs on a slow or contended filesystem. The `pure` profile keeps Week 1's 500 ms deadline, which still catches accidental quadratic behaviour in the pure code.
+Hypothesis deadlines: the `chroma` profile sets `deadline=None`, because a single example can include a collection reset, a segmented write, and a query, and a per-example deadline on that would produce `DeadlineExceeded` failures that look like correctness bugs on a slow or contended filesystem. The `pure` profile keeps Phase 1's 500 ms deadline, which still catches accidental quadratic behaviour in the pure code.
 
 ### What is not tested automatically
 
