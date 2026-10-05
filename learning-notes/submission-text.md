@@ -3,7 +3,7 @@
 Replace the two placeholders before posting:
 
 - `REPO_URL`  -> https://github.com/Iddrisusalima/ask-my-notes
-- `VIDEO_URL` -> the public link to your 30s-3min demo
+- `VIDEO_URL` -> https://youtu.be/UeQO82vJWRU  (published, Public)
 
 ## Short description (2-3 sentences)
 
@@ -30,7 +30,7 @@ Required in both the social post and the entry form.
 > text exactly.
 >
 > Code: https://github.com/Iddrisusalima/ask-my-notes
-> Demo: VIDEO_URL
+> Demo: https://youtu.be/UeQO82vJWRU
 >
 > @kirodotdev #KiroUniversity #BuildWithKiro
 
@@ -54,7 +54,7 @@ Required in both the social post and the entry form.
 > 72 correctness properties the specs state.
 >
 > Code: https://github.com/Iddrisusalima/ask-my-notes
-> Demo: VIDEO_URL
+> Demo: https://youtu.be/UeQO82vJWRU
 >
 > @kiro #KiroUniversity #BuildWithKiro
 
@@ -122,7 +122,7 @@ config, and a retrieval reference.
 - [ ] GitHub account at least 3 months old
 - [ ] GitHub account matches the social account you post from
 - [ ] Not resident in an excluded territory
-- [ ] Video is 30 seconds to 3 minutes and publicly accessible
+- [x] Video is 30 seconds to 3 minutes and publicly accessible - https://youtu.be/UeQO82vJWRU
 - [ ] Social post has repo link, description, both hashtags, and the tag
 - [ ] Entry form has repo link, video link, social post link, correct email, writeup
 - [ ] **Stop committing** once submitted, until judging concludes
